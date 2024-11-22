@@ -1,15 +1,15 @@
 import os
 import json
-from PIL import Image
 import pytesseract
 import re
 from config import Config
 from tqdm import tqdm
+from separate_page_sections import separate_header
+from skimage.io import imread
 
 data = {}
 
 def extract_text_from_image(image_path):
-
     file_match = re.search(Config.file_name_regex, image_path, re.IGNORECASE)
     if not file_match:
         print(f"{Config.Colors.error}No file_name match found for {image_path}{Config.Colors.reset}")
@@ -17,13 +17,15 @@ def extract_text_from_image(image_path):
 
     file_header = file_match.group(1)
     if file_header in data:
-        print(f"{Config.Colors.gray}Already extracted text from {file_header}{Config.Colors.reset}")
         return True
     else:
-        image = Image.open(image_path)
-        text = pytesseract.image_to_string(image)
-        body = text.split("\n\n")[1]
-        data[file_header] = body.replace("\n", " ")
+        image = imread(image_path)
+        lines_positions = separate_header(image)
+        text_to_extract = image[lines_positions[0]:lines_positions[1]]
+        text = pytesseract.image_to_string(text_to_extract)
+        text = text.replace("\n", " ")
+        # Remove tailing spaces
+        data[file_header] = re.sub(r"\s+$", "", text)
         return True
 
 
@@ -49,3 +51,7 @@ extract_text_from_images(Config.Paths.data_path)
 
 with open(Config.Paths.sentences_path, "w") as f:
     f.write(json.dumps(data))
+
+for key, value in data.items():
+    with open(os.path.join(Config.Paths.individual_sentences_path, f"{key}.txt"), "w") as f:
+        f.write(value)

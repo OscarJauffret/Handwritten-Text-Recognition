@@ -12,6 +12,7 @@ class Config:
 
         data_path = os.path.join(project_root, "data")
         sentences_path = os.path.join(data_path, "sentences.json")
+        individual_sentences_path = os.path.join(data_path, ".individual_sentences")
 
     class Colors:
         blue = '\033[94m'
