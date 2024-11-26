@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 max = 0
 
-files = os.listdir(Config.Paths.train)[:100]
+files = os.listdir(Config.Paths.train)
 for file in tqdm(files, desc="Processing images", unit="file"):
     lines = find_lines(imread(os.path.join(Config.Paths.train, file)))
     for start, end in lines:
@@ -16,7 +16,6 @@ for file in tqdm(files, desc="Processing images", unit="file"):
             print(max, file)
 
 
-print(max)
 root = gfg.Element("informations")
 size = gfg.Element("size")
 root.append(size)

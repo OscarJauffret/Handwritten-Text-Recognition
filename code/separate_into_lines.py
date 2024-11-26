@@ -12,6 +12,7 @@ def _binarize_image(image):
     threshold = threshold_otsu(im)
     return (im < threshold).astype(np.uint)
 
+
 def _count_pixels_per_line(image):
     """
     Count the number of pixels per line in the image
@@ -19,6 +20,7 @@ def _count_pixels_per_line(image):
     :return: an array with the number of pixels per line
     """
     return np.sum(image == 1, axis=1)
+
 
 def find_lines(image):
     """
@@ -29,9 +31,12 @@ def find_lines(image):
     separators = find_separators(image)
     image = image[separators[1]:separators[2], :]
     count = _count_pixels_per_line(_binarize_image(image))
-    minimum = np.max([np.min(count), 8])    # TODO: 8 is a magic number
+    minimum = np.max([np.min(count), 6])   # TODO: Magic number
     lines = count > 3 * minimum
-    return _filter_lines(lines)
+    filtered_lines = _filter_lines(lines)
+    filtered_lines = _split_merged_lines(filtered_lines, count)
+    return filtered_lines
+
 
 def _filter_lines(mask):
     """
@@ -54,3 +59,31 @@ def _filter_lines(mask):
         if len(mask) - start > 15:
             line_boundaries.append((start, len(mask)))
     return line_boundaries
+
+
+def _split_merged_lines(line_boundaries, pixel_count_per_line):
+    """
+    Split the lines that are too wide because they contain more than one line
+    :param line_boundaries: the boundaries of the lines
+    :param pixel_count_per_line: the number of pixels per line
+    :return: the new boundaries of the lines
+    """
+    new_boundaries = []
+    for start, end in line_boundaries:
+        # Find the number of local minima in the window. If there are more than 2, split the line
+        window_size = 40  # TODO: Magic number
+        minima = []
+        for i in range(start, end):
+            left = max(start, i - window_size)
+            right = min(end, i + window_size)
+            if pixel_count_per_line[i] == np.min(
+                    pixel_count_per_line[left:right]):  # If the pixel count is the minimum in the window
+                if not minima or (i - minima[-1] > window_size):  #
+                    minima.append(i)
+
+        if len(minima) > 2:
+            for i in range(1, len(minima)):
+                new_boundaries.append((minima[i - 1], minima[i]))
+        else:
+            new_boundaries.append((start, end))
+    return new_boundaries
