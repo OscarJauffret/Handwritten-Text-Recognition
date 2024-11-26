@@ -35,7 +35,8 @@ def split_data(nb_test, nb_validate, data_path):
     validate_images = extract_approx_n_images(data_path, non_test_images, nb_validate)
     train_images = set(images) - test_images - validate_images
 
-    return train_images, validate_images, test_images
+
+    return list(train_images), list(validate_images), list(test_images)
 
 def extract_approx_n_images(data_path, images, nb_images):
     """
@@ -56,4 +57,27 @@ def extract_approx_n_images(data_path, images, nb_images):
     return image_set
 
 
-split_data(50, 50, Config.Paths.data_path)
+def move_image_to_folder(image_path, folder):
+    """
+    Move an image to a folder
+    :param image_path: the path to the image
+    :param folder: the folder to move the image to
+    """
+    image_name = split(image_path)[1]
+    os.rename(image_path, os.path.join(folder, image_name))
+
+def move_images_to_folder(images, folder):
+    """
+    Move a list of images to a folder
+    :param images: the list of images to move
+    :param folder: the folder to move the images to
+    """
+    for image in images:
+        move_image_to_folder(image, folder)
+
+
+train_images, validate_images, test_images = split_data(50, 50, Config.Paths.data_path)
+
+move_images_to_folder(train_images, Config.Paths.train)
+move_images_to_folder(validate_images, Config.Paths.validate)
+move_images_to_folder(test_images, Config.Paths.test)

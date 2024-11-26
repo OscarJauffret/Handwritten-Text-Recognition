@@ -23,5 +23,5 @@ def extract_text_from_image(image_path):
     # print(body)
 
 extract_text_from_image("../data/000/a01-077u.png")
-extract_text_from_image("../output/a01-077u_median.png")
-extract_text_from_image("../output/a01-077u_binary.png")
+extract_text_from_image("../../output/a01-077u_median.png")
+extract_text_from_image("../../output/a01-077u_binary.png")

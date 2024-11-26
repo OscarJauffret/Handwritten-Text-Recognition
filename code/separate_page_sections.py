@@ -2,23 +2,23 @@ import numpy as np
 from skimage.filters import sobel
 
 
-def count_pixels_per_line(image):
+def detect_edges_per_line(image):
     """
-    Count the number of pixels per line in the image. This is useful to detect the header in the image.
-    :param image: The image to count the pixels in.
-    :return: An array with the number of pixels per line.
+    Detect the edges per line in the image using the Sobel filter.
+    This is useful to detect the header in the image.
+    :param image: The image to detect edges in.
+    :return: An array with the number of edges per line.
     """
     return np.sum(abs(sobel(image, axis=0)), axis=1)
 
-
-def separate_header(image):
+def find_separators(image):
     """
     Finds the 3 horizontal lines in the image.
     They will allow us to separate the header from the rest of the image, and the rest of the image from the footer, reducing the amount of data to process.
     :param image: The array with the number of pixels per line.
     :return: The 3 largest peaks in the array.
     """
-    px_per_line_array = count_pixels_per_line(image)
+    px_per_line_array = detect_edges_per_line(image)
 
     # Find the 3 largest peaks
     # O(n) solution, since we know we are looking for 3 peaks
@@ -35,6 +35,8 @@ def separate_header(image):
 
     footer_search_space = px_per_line_array[len(px_per_line_array) // 2:]
     top3 = np.argmax(footer_search_space)
+    # We need to add the length of the first half of the image to the index of the peak in the second half
+    top3 += len(px_per_line_array) // 2
 
     # sort the 3 peaks
     top1, top2, top3 = sorted([top1, top2, top3])
