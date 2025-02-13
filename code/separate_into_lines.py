@@ -35,7 +35,7 @@ def find_lines(image):
     lines = count > 3 * minimum         # Lines are where the pixel count is more than 3 times the minimum
     filtered_lines = _filter_lines(lines)
     filtered_lines = _split_merged_lines(filtered_lines, count)
-    return filtered_lines
+    return filtered_lines + separators[1]
 
 
 def _filter_lines(mask):

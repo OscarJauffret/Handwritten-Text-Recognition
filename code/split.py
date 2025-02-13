@@ -76,8 +76,8 @@ def move_images_to_folder(images, folder):
         move_image_to_folder(image, folder)
 
 
-train_images, validate_images, test_images = split_data(50, 50, Config.Paths.data_path)
+train_images, validate_images, test_images = split_data(50, 50, Config.Paths.original_images_path)
 
-move_images_to_folder(train_images, Config.Paths.train)
-move_images_to_folder(validate_images, Config.Paths.validate)
-move_images_to_folder(test_images, Config.Paths.test)
+move_images_to_folder(train_images, Config.Paths.train_images)
+move_images_to_folder(validate_images, Config.Paths.validate_images)
+move_images_to_folder(test_images, Config.Paths.test_images)
