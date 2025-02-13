@@ -1,6 +1,6 @@
 from config import Config
 import os
-from separate_into_lines import find_lines
+from code.old.separate_into_lines import find_lines
 from skimage.io import imread
 import xml.etree.ElementTree as gfg
 from tqdm import tqdm

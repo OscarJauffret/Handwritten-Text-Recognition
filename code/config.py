@@ -41,5 +41,5 @@ class Config:
         error = '\033[91m'
 
     class Data:
-        max_line_width = 512
+        line_width = 512
         line_height = 32
