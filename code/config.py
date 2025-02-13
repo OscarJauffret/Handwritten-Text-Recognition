@@ -14,10 +14,22 @@ class Config:
         sentences_path = os.path.join(data_path, "sentences.json")
         individual_sentences_path = os.path.join(data_path, ".individual_sentences")
         images_meta_info_path = os.path.join(data_path, "images_meta_info")
+        original_images_path = os.path.join(data_path, "original_data")
 
         test = os.path.join(data_path, "test")
+        test_images = os.path.join(test, "images")
+        test_lines = os.path.join(test, "lines")
+        test_labels = os.path.join(test, "labels")
+
         train = os.path.join(data_path, "train")
+        train_images = os.path.join(train, "images")
+        train_lines = os.path.join(train, "lines")
+        train_labels = os.path.join(train, "labels")
+
         validate = os.path.join(data_path, "validate")
+        validate_images = os.path.join(validate, "images")
+        validate_lines = os.path.join(validate, "lines")
+        validate_labels = os.path.join(validate, "labels")
 
         sentences_sizes_path = os.path.join(data_path, "sentences_sizes.xml")
 
@@ -27,3 +39,7 @@ class Config:
         gray = '\033[90m'
         reset = '\033[0m'
         error = '\033[91m'
+
+    class Data:
+        max_line_width = 512
+        line_height = 32
