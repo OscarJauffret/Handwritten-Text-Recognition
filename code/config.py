@@ -43,3 +43,6 @@ class Config:
     class Data:
         line_width = 512
         line_height = 32
+
+    class Model:
+        output_width = 32
