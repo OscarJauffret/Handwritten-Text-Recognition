@@ -1,4 +1,5 @@
 import os
+import string
 
 class Config:
     file_name_regex = r"([a-z]\d{2}-\d{3}[a-z]?).png"
@@ -46,3 +47,5 @@ class Config:
 
     class Model:
         output_width = 128
+        alphabet = string.ascii_lowercase + string.ascii_uppercase + string.digits + " .,;'-()\"!&:?#+*/"
+        epochs = 100

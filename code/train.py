@@ -25,9 +25,8 @@ def train():
 
     # This is the alphabet that the model will learn to recognize
     # All the characters that can be recognized. This is the vocabulary of the model, it only recognizes these characters
-    ALPHABET = string.ascii_lowercase + string.ascii_uppercase + string.digits + " .,;'-()\"!&:?#+*/"
     # Associate each character with an index. We add 1 because the CTC loss expects the blank character to be at index 0
-    char_to_idx = {char: idx + 1 for idx, char in enumerate(ALPHABET)}
+    char_to_idx = {char: idx + 1 for idx, char in enumerate(Config.Model.alphabet)}
     char_to_idx["<BLANK>"] = 0  # Blank character for CTC loss
 
 
@@ -69,12 +68,10 @@ def train():
 
         return decoded_text
 
-    # Hyperparameters
-    num_epochs = 30
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Load the model, loss function, and optimizer
-    num_classes = len(ALPHABET) + 1  # +1 for the blank character
+    num_classes = len(Config.Model.alphabet) + 1  # +1 for the blank character
     crnn = CRNN(num_classes=num_classes).to(device)
 
     # CTC loss uses BLANK=0 to align the predictions without knowing the exact position of the characters
@@ -85,7 +82,7 @@ def train():
     optimizer = optim.Adam(crnn.parameters(), lr=0.0005)
 
     # Training
-    for epoch in range(num_epochs):
+    for epoch in range(Config.Model.epochs):
         crnn.train()    # Set the model to training mode
         total_loss = 0  # Accumulate the loss for each epoch
 
@@ -122,9 +119,9 @@ def train():
 
             total_loss += loss.item()
 
-        print(f"Epoch {epoch+1}/{num_epochs}, Loss: {total_loss / len(train_loader):.4f}")
+        print(f"Epoch {epoch+1}/{Config.Model.epochs}, Loss: {total_loss / len(train_loader):.4f}")
         # Save the model after each epoch
-        torch.save(crnn.state_dict(), 'model.pth')
+        torch.save(crnn.state_dict(), 'model100epochs.pth')
 
 
 if __name__ == '__main__':
