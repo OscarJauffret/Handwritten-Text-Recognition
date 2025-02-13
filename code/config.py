@@ -45,4 +45,4 @@ class Config:
         line_height = 32
 
     class Model:
-        output_width = 32
+        output_width = 128

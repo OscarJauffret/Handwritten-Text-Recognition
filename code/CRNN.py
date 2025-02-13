@@ -25,13 +25,13 @@ class CRNN(nn.Module):
             nn.ReLU(),
             nn.MaxPool2d((2, 2)),  # (8, 128)
 
-            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d((2, 2)),  # (4, 64)
-
-            nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d((2, 2))  # (2, 32) is the size of the output of the CNN
+            #nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
+            #nn.ReLU(),
+            #nn.MaxPool2d((2, 2)),  # (4, 64)
+#
+            #nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1),
+            #nn.ReLU(),
+            #nn.MaxPool2d((2, 2))  # (2, 32) is the size of the output of the CNN
         )
         # The output of the CNN will be of the form (batch, 512, 2, 32), where batch is the number of images in the batch.
         # Each "column" of the image will be processed by the RNN. (there are 32 columns)
@@ -43,7 +43,7 @@ class CRNN(nn.Module):
         # num_layers is the number of recurrent layers
         # bidirectional is set to True to process the sequence from left to right and right to left
         # batch_first is set to True to have the input in the form (batch, sequence, feature)
-        self.rnn = nn.LSTM(input_size=512, hidden_size=hidden_size, num_layers=2, bidirectional=True, batch_first=True)
+        self.rnn = nn.LSTM(input_size=128, hidden_size=hidden_size, num_layers=2, bidirectional=True, batch_first=True)
 
         # Output layer
         self.fc = nn.Linear(hidden_size * 2, num_classes)  # BiLSTM -> num_classes

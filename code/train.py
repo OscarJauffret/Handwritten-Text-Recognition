@@ -70,7 +70,7 @@ def train():
         return decoded_text
 
     # Hyperparameters
-    num_epochs = 10
+    num_epochs = 30
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Load the model, loss function, and optimizer
@@ -82,7 +82,7 @@ def train():
     criterion = nn.CTCLoss(blank=0) # CTC loss doesn't require to have a text that is cut letter by letter unlike the cross-entropy loss
 
     # The optimizer automatically updates the learning rate of the model. It works well with CRNNs
-    optimizer = optim.Adam(crnn.parameters(), lr=0.001)
+    optimizer = optim.Adam(crnn.parameters(), lr=0.0005)
 
     # Training
     for epoch in range(num_epochs):
@@ -110,10 +110,6 @@ def train():
                 print(f"{Config.Colors.error}NaN in the output{Config.Colors.reset}")
                 exit()
 
-            print(f"targets: {targets}")
-            print(f"input_lengths: {input_lengths}")
-            print(f"target_lengths: {target_lengths}")
-            print(len(train_loader))
 
             # Calculate the loss
             # targets is the real text
@@ -127,6 +123,9 @@ def train():
             total_loss += loss.item()
 
         print(f"Epoch {epoch+1}/{num_epochs}, Loss: {total_loss / len(train_loader):.4f}")
+        # Save the model after each epoch
+        torch.save(crnn.state_dict(), 'model.pth')
+
 
 if __name__ == '__main__':
     train()
