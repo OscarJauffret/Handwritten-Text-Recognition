@@ -16,7 +16,7 @@ for file in tqdm(files, desc="Processing images", unit="file"):
             print(max, file)
 
 
-root = gfg.Element("informations")
+root = gfg.Element("information")
 size = gfg.Element("size")
 root.append(size)
 max_element = gfg.SubElement(size, "max-line-height")

@@ -6,9 +6,6 @@ Recognition of handwritten text using deep learning. The model is trained on the
 > [!NOTE]
 > The project is still in progress.
 
-> [!TODO]
-> - Change the magic number 8 in code/separate_into_lines.py
-
 ## Requirements
 - Python
 ```shell
@@ -27,8 +24,8 @@ pip install -r requirements.txt
    python code/split.py
    ```
 
-### Split the forms into lines
+### Find the highest height of the images
 ```shell
-python code/separate_into_lines.py
+python code/find_max_line_height.py.
 ```
 

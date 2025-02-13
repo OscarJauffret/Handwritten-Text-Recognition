@@ -21,16 +21,15 @@ def find_separators(image):
     px_per_line_array = detect_edges_per_line(image)
 
     # Find the 3 largest peaks
-    # O(n) solution, since we know we are looking for 3 peaks
     # We know that the first two are in the first half of the image, and the last one is in the second half
-    # We also know that the peaks are at least 100 pixels apart
+    # We also know that the peaks are at least 100 pixels apart, so once we find a peak, we can clear a window around it
 
-    width = 100
-    header_search_space = px_per_line_array[:len(px_per_line_array) // 2]
+    width = 100   # The width of the window to clear around the peak
+    header_search_space = px_per_line_array[:len(px_per_line_array) // 2]   # Only search in the first half of the image for the header
     top1 = np.argmax(header_search_space)
     y_from = max(0, top1 - width)
     y_to = min(len(header_search_space), top1 + width)
-    header_search_space[y_from:y_to] = 0
+    header_search_space[y_from:y_to] = 0    # Remove the peak we just found
     top2 = np.argmax(header_search_space)
 
     footer_search_space = px_per_line_array[len(px_per_line_array) // 2:]
