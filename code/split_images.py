@@ -4,13 +4,14 @@ Each line in the image will be saved as a separate image.
 """
 
 from config import Config
-from code.separate_into_lines import get_line_bounds
+from code.extract_bounds import get_line_bounds, get_words_bounds
 from skimage.io import imread, imsave
 from skimage.transform import resize
+from tqdm import tqdm
 import numpy as np
 import os
 
-def extract_lines(image_path, save_path=Config.Paths.train_lines):
+def extract_lines(image_path, save_path):
     """
     Extracts the lines from an image and saves them as separate images
     :param image_path: the path to the image
@@ -32,7 +33,25 @@ def extract_lines(image_path, save_path=Config.Paths.train_lines):
         line_images.append(line_img)
     return line_images
 
-def downsample_image(image, target_height=Config.Data.line_height, target_width=Config.Data.line_width):
+def extract_words(image_path, save_path):
+    """
+    Extracts the words from an image and saves them as separate images
+    :param image_path: the path to the image
+    :param save_path: the path to save the words
+    """
+    img = imread(image_path, as_gray=True)
+    os.makedirs(save_path, exist_ok=True)
+
+    words = get_words_bounds(image_path)
+
+    for id, (x_min, y_min), (x_max, y_max) in words:
+        word_img = img[y_min:y_max, x_min:x_max]
+        word_img = downsample_image(word_img, Config.Data.word_height, Config.Data.word_width)
+
+        word_filename = f"{id}.png"
+        imsave(os.path.join(save_path, word_filename), word_img)
+
+def downsample_image(image, target_height, target_width):
     """
     Resize an image while keeping the aspect ratio and adding padding.
 
@@ -63,13 +82,14 @@ def downsample_image(image, target_height=Config.Data.line_height, target_width=
     return padded_image
 
 if __name__ == "__main__":
+    splitting_function = extract_lines, extract_words
+
     for dataset_type, img_path, save_path in [
-        ("train", Config.Paths.train_images, Config.Paths.train_lines),
-        ("test", Config.Paths.test_images, Config.Paths.test_lines),
-        ("validate", Config.Paths.validate_images, Config.Paths.validate_lines),
+        ("train", Config.Paths.train_images, Config.Paths.train_words),
+        ("test", Config.Paths.test_images, Config.Paths.test_words),
+        ("validate", Config.Paths.validate_images, Config.Paths.validate_words),
     ]:
-        print(f"Processing {dataset_type} images...")
+        print(f"🚀 Processing {dataset_type} images...")
         files = os.listdir(img_path)
-        for file in files:
-            extract_lines(os.path.join(img_path, file), save_path)
-        print(f"{dataset_type} set processed.")
+        for file in tqdm(files, desc=f"📂 {dataset_type} Progress", unit="image"):
+            splitting_function[1](os.path.join(img_path, file), save_path)

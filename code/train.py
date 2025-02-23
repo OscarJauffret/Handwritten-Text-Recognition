@@ -14,7 +14,7 @@ def train():
     torch.backends.cudnn.benchmark = True
 
 
-    image_folder = Config.Paths.train_lines
+    image_folder = Config.Paths.train_words
     label_folder = Config.Paths.train_labels
     dataset = HandwritingDataset(image_folder, label_folder)
 
@@ -76,13 +76,16 @@ def train():
 
     # CTC loss uses BLANK=0 to align the predictions without knowing the exact position of the characters
     # For example, if  the model predicts "HHHEELLLOO", the CTC loss will align it to "HELLO" by removing the BLANKS
-    criterion = nn.CTCLoss(blank=0) # CTC loss doesn't require to have a text that is cut letter by letter unlike the cross-entropy loss
+    criterion = nn.CTCLoss(blank=0, zero_infinity=True) # CTC loss doesn't require to have a text that is cut letter by letter unlike the cross-entropy loss
 
     # The optimizer automatically updates the learning rate of the model. It works well with CRNNs
-    optimizer = optim.Adam(crnn.parameters(), lr=0.0005)
+    optimizer = optim.Adam(crnn.parameters(), lr=0.0001)
+
+    torch.autograd.set_detect_anomaly(True) # Will halt training and point ti the first place where something goes wrong
 
     # Training
     for epoch in range(Config.Model.epochs):
+        print(f"Epoch {epoch+1}/{Config.Model.epochs}")
         crnn.train()    # Set the model to training mode
         total_loss = 0  # Accumulate the loss for each epoch
 
@@ -103,9 +106,10 @@ def train():
             outputs = outputs.log_softmax(2)  # For the CTC loss, we need to apply the log_softmax to the output. CTC needs log-normalized probabilities
             # outputs is the predictions of the model. It is a tensor of shape (batch_size, 32, num_classes). Each class has a probability for each of the 32 columns
 
-            if torch.isnan(outputs).any():
-                print(f"{Config.Colors.error}NaN in the output{Config.Colors.reset}")
-                exit()
+            if torch.isnan(outputs).any():  # https://discuss.pytorch.org/t/best-practices-to-solve-nan-ctc-loss/151913
+                print(f"{Config.Colors.error}⚠️ NaN detected in the output. Skipping this batch.{Config.Colors.reset}", end=" ")
+                print(f"{Config.Colors.gray}Texts: {texts}{Config.Colors.reset}")
+                continue
 
 
             # Calculate the loss
@@ -121,7 +125,7 @@ def train():
 
         print(f"Epoch {epoch+1}/{Config.Model.epochs}, Loss: {total_loss / len(train_loader):.4f}")
         # Save the model after each epoch
-        torch.save(crnn.state_dict(), 'model100epochs.pth')
+        torch.save(crnn.state_dict(), 'model_words.pth')
 
 
 if __name__ == '__main__':
