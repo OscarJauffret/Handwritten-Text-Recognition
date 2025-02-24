@@ -125,7 +125,7 @@ def train():
 
         print(f"Epoch {epoch+1}/{Config.Model.epochs}, Loss: {total_loss / len(train_loader):.4f}")
         # Save the model after each epoch
-        torch.save(crnn.state_dict(), 'model_words.pth')
+        torch.save(crnn.state_dict(), 'model_words_2.pth')
 
 
 if __name__ == '__main__':

@@ -11,7 +11,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 num_classes = len(Config.Model.alphabet) + 1  # +1 pour le blank CTC
 crnn = CRNN(num_classes=num_classes).to(device)
 
-crnn.load_state_dict(torch.load("model100epochs.pth", map_location=device))  # Charger le modèle
+crnn.load_state_dict(torch.load("model_words_2.pth", map_location=device))  # Charger le modèle
 crnn.eval()  # Mettre en mode évaluation
 
 def preprocess_image(image_path):
@@ -21,8 +21,8 @@ def preprocess_image(image_path):
     return img.to(device)
 
 # Charger une image de test
-image_path = "r06-137-04.png"
-image_path = os.path.join(Config.Paths.test_lines, image_path)
+image_path = "r02-146-01-06.png"
+image_path = os.path.join(Config.Paths.test_words, image_path)
 image = preprocess_image(image_path)
 
 with torch.no_grad():
