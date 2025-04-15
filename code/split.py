@@ -72,6 +72,8 @@ def move_images_to_folder(images, folder):
     :param images: the list of images to move
     :param folder: the folder to move the images to
     """
+    if not os.path.exists(folder):
+        os.makedirs(folder)
     for image in images:
         move_image_to_folder(image, folder)
 
