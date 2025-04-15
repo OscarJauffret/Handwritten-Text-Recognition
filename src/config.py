@@ -36,6 +36,8 @@ class Config:
 
         sentences_sizes_path = os.path.join(data_path, "sentences_sizes.xml")
 
+        models_path = os.path.join(project_root, "model")
+
     class Colors:
         blue = '\033[94m'
         warning = '\033[93m'
@@ -53,3 +55,4 @@ class Config:
         output_width = 32
         alphabet = string.ascii_lowercase + string.ascii_uppercase + string.digits + " .,;'-()\"!&:?#+*/"
         epochs = 100
+        learning_rate = 0.0001

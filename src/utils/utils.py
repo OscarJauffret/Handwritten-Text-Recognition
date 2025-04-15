@@ -2,13 +2,19 @@ import torch
 from src.config import Config
 
 
-def encode_texts(char_to_idx, texts):
+def encode_texts(texts):
     """
     Convert a list of strings to a tensor containing the encoded indices.
 
     :param texts: List of strings
     :return: Tensor containing the encoded indices
     """
+    # This is the alphabet that the model will learn to recognize
+    # All the characters that can be recognized. This is the vocabulary of the model, it only recognizes these characters
+    # Associate each character with an index. We add 1 because the CTC loss expects the blank character to be at index 0
+    char_to_idx = {char: idx + 1 for idx, char in enumerate(Config.Model.alphabet)}
+    char_to_idx["<BLANK>"] = 0  # Blank character for CTC loss
+
     encoded = []
     for text in texts:
         text_encoded = []
@@ -40,3 +46,22 @@ def decode_output(char_to_idx, output):
         prev_idx = idx
 
     return decoded_text
+
+def select_device():
+    """
+    Select and return the appropriate computing device based on hardware availability.
+
+    This function prioritizes the GPU (CUDA) if available, then falls back on
+    Metal Performance Shaders (MPS) for Apple devices. If neither is available,
+    it defaults to the CPU.
+
+    :return: The selected device (CUDA, MPS, or CPU) according to the hardware availability.
+    """
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+    print(f"Using device: {device}")
+    return device
