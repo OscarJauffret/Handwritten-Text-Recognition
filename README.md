@@ -21,7 +21,7 @@ pip install -r requirements.txt
 Run the following script to automatically perform all preprocessing steps:
 
 ```bash
-python init_project.py
+python -m src.init.init_project
 ```
 
 This script includes:
