@@ -23,9 +23,10 @@ pip install -r requirements.txt
    ```shell
    python code/split.py
    ```
-
-### Find the highest height of the images
+### Split each image of the dataset into words
+The script will loop over all images in train/validate/test folders and split them into words.
+The words will be saved in the words/ folder.
 ```shell
-python code/find_max_line_height.py.
+python code/split_images.py
 ```
 
