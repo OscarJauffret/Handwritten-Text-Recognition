@@ -1,32 +1,49 @@
-# Handwritten Text Recognition
+# 📝 Handwritten Text Recognition
 
-## Introduction
-Recognition of handwritten text using deep learning. The model is trained on the IAM dataset.
+This project focuses on recognizing handwritten text using deep learning, trained on the IAM dataset.
 
 > [!NOTE]
 > The project is still in progress.
 
-## Requirements
+## 🛠️ Requirements
+
 - Python
-```shell
+
+Install dependencies:
+```bash
 pip install -r requirements.txt
 ```
-## Steps (up to now)
-### Data Preprocessing
-   1. Load the IAM dataset
-   2. Load the meta-information about the images to get the text
-   ```shell
-   python code/dump_XML_to_dir.py
-   ```
-   
-### Split the dataset into training and validation sets
-   ```shell
-   python code/split.py
-   ```
-### Split each image of the dataset into words
-The script will loop over all images in train/validate/test folders and split them into words.
-The words will be saved in the words/ folder.
-```shell
-python code/split_images.py
-```
 
+## 📋 Workflow Overview
+
+### 1. 📁 Data Preprocessing
+
+- Load the IAM dataset
+- Extract meta-information (text data) from image annotations:
+  ```bash
+  python code/dump_XML_to_dir.py
+  ```
+
+### 2. 🔀 Dataset Splitting
+
+- Split the dataset into training and validation sets:
+  ```bash
+  python code/split.py
+  ```
+
+### 3. ✂️ Word-Level Image Splitting
+
+- Split each image into individual words.
+- Works on all images in `train/`, `validate/`, and `test/` folders.
+- Saves the words into the `words/` directory:
+  ```bash
+  python code/split_images.py
+  ```
+  
+### 4. 🖊️ Label Generation
+- Generate labels for the words, using the xml files.
+  ```bash
+  python code/generate_labels.py
+  ```
+
+---

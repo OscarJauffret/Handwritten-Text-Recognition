@@ -32,7 +32,7 @@ def extract_from_xml(xml_file, mode='lines'):
     elif mode == 'words':
         return extract_words_from_xml(xml_file)
     else:
-        raise ValueError("Mode invalide. Utilisez 'lines' ou 'words'.")
+        raise ValueError("Invalid mode. Use 'lines' or 'words'.")
 
 
 def extract_lines_from_xml(xml_file):
