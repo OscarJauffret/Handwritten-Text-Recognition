@@ -1,7 +1,7 @@
 import os
 from os.path import split
 
-from config import Config
+from ..config import Config
 
 
 def list_images(dir):
@@ -76,7 +76,6 @@ def move_images_to_folder(images, folder):
         os.makedirs(folder)
     for image in images:
         move_image_to_folder(image, folder)
-
 
 train_images, validate_images, test_images = split_data(50, 50, Config.Paths.original_images_path)
 

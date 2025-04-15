@@ -9,8 +9,14 @@ class Config:
 
         data_path = os.path.join(project_root, "data")
         sentences_path = os.path.join(data_path, "sentences.json")
-        individual_sentences_path = os.path.join(data_path, ".individual_sentences")
+
+        # This directory will contain .txt files containing the written texts.
+        individual_sentences_path = os.path.join(data_path, "individual_sentences")
+
+        # This directory should contain .xml files containing information about the written texts.
         images_meta_info_path = os.path.join(data_path, "images_meta_info")
+
+        # This directory should contain the original images.
         original_images_path = os.path.join(data_path, "original_data")
 
         test = os.path.join(data_path, "test")

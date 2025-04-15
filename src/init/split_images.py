@@ -3,8 +3,8 @@ The purpose of this script is to split an image into multiple images based on th
 Each line or word in the image will be saved as a separate image.
 """
 
-from config import Config
-from extract_bounds import get_line_bounds, get_words_bounds
+from ..config import Config
+from ..utils.extract_bounds import get_line_bounds, get_words_bounds
 from skimage.io import imread, imsave
 from skimage.transform import resize
 from tqdm import tqdm

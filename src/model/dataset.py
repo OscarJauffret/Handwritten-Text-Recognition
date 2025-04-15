@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import os
 from skimage.io import imread
-from config import Config
+from ..config import Config
 from matplotlib import pyplot as plt
 
 class HandwritingDataset(Dataset):

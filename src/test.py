@@ -1,6 +1,5 @@
 import torch
-from CRNN import CRNN
-from dataset import HandwritingDataset
+from src.model.CRNN import CRNN
 from config import Config
 from skimage.io import imread
 import numpy as np

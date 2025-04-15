@@ -1,5 +1,5 @@
 import os
-from config import Config
+from ..config import Config
 from PIL import Image
 import json
 

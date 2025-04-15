@@ -1,4 +1,4 @@
-from config import Config
+from ..config import Config
 import xml.etree.ElementTree as ET
 import os
 

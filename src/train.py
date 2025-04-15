@@ -1,19 +1,16 @@
-from io import text_encoding
-
 import torch
 import torch.optim as optim
 
-from CRNN import CRNN
+from src.model.CRNN import CRNN
 import torch.nn as nn
-from dataset import HandwritingDataset
-import string
+
+from .utils.utils import encode_texts
+from src.model.dataset import HandwritingDataset
 from torch.utils.data import DataLoader
 from config import Config
 
 def train():
     torch.backends.cudnn.benchmark = True
-
-
     image_folder = Config.Paths.train_words
     label_folder = Config.Paths.train_labels
     dataset = HandwritingDataset(image_folder, label_folder)
@@ -23,52 +20,24 @@ def train():
     # A batch size of 8 is a good compromise between speed and not too much memory usage.
     train_loader = DataLoader(dataset, batch_size=8, shuffle=True, num_workers=8)  # Shuffling avoids the model learning the order of the images
 
+    val_image_folder = Config.Paths.validate_words
+    val_label_folder = Config.Paths.validate_labels
+    val_dataset = HandwritingDataset(val_image_folder, val_label_folder)
+    val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False, num_workers=4)
+
     # This is the alphabet that the model will learn to recognize
     # All the characters that can be recognized. This is the vocabulary of the model, it only recognizes these characters
     # Associate each character with an index. We add 1 because the CTC loss expects the blank character to be at index 0
     char_to_idx = {char: idx + 1 for idx, char in enumerate(Config.Model.alphabet)}
     char_to_idx["<BLANK>"] = 0  # Blank character for CTC loss
 
-
-    def encode_texts(texts):
-        """
-        Convert a list of strings to a tensor containing the encoded indices.
-
-        :param texts: List of strings
-        :return: Tensor containing the encoded indices
-        """
-        encoded = []
-        for text in texts:
-            text_encoded = []
-            for char in text:
-                if char in char_to_idx:
-                    text_encoded.append(char_to_idx[char])
-                else:
-                    print(f"{Config.Colors.warning}Character '{char}' not in the alphabet{Config.Colors.reset}")
-            encoded.extend(text_encoded)  # Add the indices to the list
-        return torch.tensor(encoded, dtype=torch.long)
-
-    def decode_output(output):
-        """
-        Decode the output of the model to text.
-
-        :param output: Output of the model
-        :return: Decoded text
-        """
-        _, indices = torch.max(output, 2) # Get the index with the highest probability
-        indices = indices.squeeze(1).cpu().numpy()  # Remove the batch dimension and convert to NumPy
-
-        decoded_text = ""
-        prev_idx = None
-
-        for idx in indices:
-            if idx != 0 and idx != prev_idx:  # Ignore the blank character and consecutive duplicates
-                decoded_text += list(char_to_idx.keys())[list(char_to_idx.values()).index(idx)]  # Convert the index to the corresponding character
-            prev_idx = idx
-
-        return decoded_text
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+    print(f"Using device: {device}")
 
     # Load the model, loss function, and optimizer
     num_classes = len(Config.Model.alphabet) + 1  # +1 for the blank character
@@ -81,7 +50,11 @@ def train():
     # The optimizer automatically updates the learning rate of the model. It works well with CRNNs
     optimizer = optim.Adam(crnn.parameters(), lr=0.0001)
 
-    torch.autograd.set_detect_anomaly(True) # Will halt training and point ti the first place where something goes wrong
+    torch.autograd.set_detect_anomaly(True) # Will halt training and point to the first place where something goes wrong
+
+    best_val_loss = float("inf")
+    patience = 5  # nombre d'époques sans amélioration avant arrêt
+    patience_counter = 0
 
     # Training
     for epoch in range(Config.Model.epochs):
@@ -92,7 +65,7 @@ def train():
         for images, texts in train_loader:  #  Images is a tensor of shape (batch_size, 1, height, width)
             images = images.to(device)
 
-            targets = encode_texts(texts)  # Convert the texts to indices
+            targets = encode_texts(char_to_idx, texts)  # Convert the texts to indices
 
             # The CTC loss requires the number of columns that the model outputs for each image
             input_lengths = torch.full((images.shape[0],), Config.Model.output_width, dtype=torch.long).to(device)
@@ -117,15 +90,32 @@ def train():
             # input_lengths is the number of columns that the model outputs for each image
             # target_lengths is the length of the real text
             loss = criterion(outputs.permute(1, 0, 2), targets, input_lengths, target_lengths)
-            optimizer.zero_grad()   # Clear the gradients. If we don't do this, the gradients will accumulate for each batch
+            optimizer.zero_grad()   # Clear the gradients.
             loss.backward()         # Calculate the gradients
             optimizer.step()        # Update the weights
 
             total_loss += loss.item()
 
         print(f"Epoch {epoch+1}/{Config.Model.epochs}, Loss: {total_loss / len(train_loader):.4f}")
+
+
+        # Validation phase
+        crnn.eval()
+        val_loss = 0
+        with torch.no_grad():
+            for images, texts in val_loader:
+                images = images.to(device)
+                targets = encode_texts(char_to_idx, texts)
+                input_lengths = torch.full((images.shape[0],), Config.Model.output_width, dtype=torch.long).to(device)
+                target_lengths = torch.tensor([len(t) for t in texts], dtype=torch.long).to(device)
+                outputs = crnn(images).log_softmax(2)
+                loss = criterion(outputs.permute(1, 0, 2), targets, input_lengths, target_lengths)
+                val_loss += loss.item()
+        val_loss /= len(val_loader)
+        print(f"Validation Loss: {val_loss:.4f}")
+
         # Save the model after each epoch
-        torch.save(crnn.state_dict(), 'model_words_2.pth')
+        torch.save(crnn.state_dict(), 'model_words.pth')
 
 
 if __name__ == '__main__':

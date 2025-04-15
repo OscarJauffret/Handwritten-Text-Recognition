@@ -1,6 +1,6 @@
 import os
 import xml.etree.ElementTree as ET
-from config import Config
+from ..config import Config
 
 def generate_labels(image_folder, label_folder, mode='lines', xml_folder=Config.Paths.images_meta_info_path):
     """
