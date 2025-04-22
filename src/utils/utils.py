@@ -9,8 +9,8 @@ def encode_texts(texts):
     :param texts: List of strings
     :return: Tensor containing the encoded indices
     """
-    # This is the alphabet that the model will learn to recognize
-    # All the characters that can be recognized. This is the vocabulary of the model, it only recognizes these characters
+    # This is the alphabet that the models will learn to recognize
+    # All the characters that can be recognized. This is the vocabulary of the models, it only recognizes these characters
     # Associate each character with an index. We add 1 because the CTC loss expects the blank character to be at index 0
     char_to_idx = {char: idx + 1 for idx, char in enumerate(Config.Model.alphabet)}
     char_to_idx["<BLANK>"] = 0  # Blank character for CTC loss
@@ -29,9 +29,9 @@ def encode_texts(texts):
 
 def decode_output(char_to_idx, output):
     """
-    Decode the output of the model to text.
+    Decode the output of the models to text.
 
-    :param output: Output of the model
+    :param output: Output of the models
     :return: Decoded text
     """
     _, indices = torch.max(output, 2) # Get the index with the highest probability

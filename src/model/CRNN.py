@@ -37,7 +37,7 @@ class CRNN(nn.Module):
         # Each "column" of the image will be processed by the RNN. (there are 32 columns)
 
         # RNN layers
-        # The RNN will take the output of the CNN and process it. It will model the relation between the characters in the image.
+        # The RNN will take the output of the CNN and process it. It will models the relation between the characters in the image.
         # input_size is the number of features in the input, which is the number of channels in the last layer of the CNN
         # hidden_size is the number of features in the hidden state
         # num_layers is the number of recurrent layers

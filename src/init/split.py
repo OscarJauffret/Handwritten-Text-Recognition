@@ -23,7 +23,7 @@ def list_images(dir):
 def split_data(nb_test, nb_validate, data_path):
     """
     Split the data into training, validation and testing sets. The values passed to this function are approximate because we do not want to split the data
-    in the middle of a writer's images. Otherwise, the model would know the writer's style from the training set and would be able to recognize the writer
+    in the middle of a writer's images. Otherwise, the models would know the writer's style from the training set and would be able to recognize the writer
     :param nb_test: the approximate number of images to use for testing
     :param nb_validate: the approximate number of images to use for validation
     :param data_path: the path to the data directory
