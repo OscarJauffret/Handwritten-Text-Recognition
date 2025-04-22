@@ -45,7 +45,7 @@ class Trainer:
 
     def forward(self, images, texts):
         images = images.to(self.device)
-        targets = encode_texts(texts)  # Convert the texts to indices
+        targets = encode_texts(texts).to(self.device)  # Convert the texts to indices
         # The CTC loss requires the number of columns that the model outputs for each image
         input_lengths = torch.full((images.shape[0],), Config.Model.output_width, dtype=torch.long).to(self.device)
         # CTC loss uses the length of the target text to align the model output with the real texts

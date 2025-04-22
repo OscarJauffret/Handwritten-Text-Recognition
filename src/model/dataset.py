@@ -37,7 +37,7 @@ if __name__ == '__main__':
     label_folder = Config.Paths.train_labels
     dataset = HandwritingDataset(image_folder, label_folder)
 
-    train_loader = DataLoader(dataset, batch_size=8, shuffle=True)
+    train_loader = DataLoader(dataset, batch_size=Config.Model.batch_size, shuffle=True)
 
     for images, texts in train_loader:
         plt.imshow(images[0].squeeze(0), cmap="gray")

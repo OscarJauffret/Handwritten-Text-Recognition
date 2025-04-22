@@ -18,11 +18,11 @@ if __name__ == "__main__":
         ("python -m src.init.generate_labels", "Generate labels from XML"),
     ]
     if not os.path.exists(Config.Paths.images_meta_info_path):
-        print(f"❌ You should have the meta data of the dataset in the data/images_meta_info directory")
+        print(f"❌ You should have the meta data of the dataset in the {Config.Paths.images_meta_info_path} directory")
         exit(1)
 
     if not os.path.exists(Config.Paths.original_images_path):
-        print(f"❌ You should have the dataset in the data/original_data directory")
+        print(f"❌ You should have the dataset in the {Config.Paths.original_images_path} directory")
         exit(2)
 
     for cmd, desc in steps:

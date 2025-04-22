@@ -56,3 +56,4 @@ class Config:
         alphabet = string.ascii_lowercase + string.ascii_uppercase + string.digits + " .,;'-()\"!&:?#+*/"
         epochs = 100
         learning_rate = 0.0001
+        batch_size = 32

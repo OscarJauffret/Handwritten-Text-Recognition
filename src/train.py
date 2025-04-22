@@ -15,10 +15,10 @@ def train():
     # Training a model on a single image at a time would be too slow, so we create a batch of 8 images which will be fed to the model at once.
     # A batch is a mini-group that will do a single update of the model's weights.
     # A batch size of 8 is a good compromise between speed and not too much memory usage.
-    train_loader = DataLoader(dataset, batch_size=8, shuffle=True, num_workers=8)  # Shuffling avoids the model learning the order of the images
+    train_loader = DataLoader(dataset, batch_size=Config.Model.batch_size, shuffle=True, num_workers=8)  # Shuffling avoids the model learning the order of the images
 
     val_dataset = HandwritingDataset(Config.Paths.validate_words, Config.Paths.validate_labels)
-    val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False, num_workers=4)
+    val_loader = DataLoader(val_dataset, batch_size=Config.Model.batch_size, shuffle=False, num_workers=4)
 
     device = select_device()
 
