@@ -6,6 +6,7 @@ from skimage.io import imread
 from ..config import Config
 from ..utils.utils import select_device
 from matplotlib import pyplot as plt
+from tqdm import tqdm
 
 class HandwritingDataset(Dataset):
     def __init__(self, image_folder, label_folder, device, transform=None):
@@ -18,7 +19,7 @@ class HandwritingDataset(Dataset):
 
         images = []
         labels = []
-        for fname in self.image_files:
+        for fname in tqdm(self.image_files, desc="Loading dataset"):
             image_path = os.path.join(self.image_folder, fname)
             label_path = os.path.join(self.label_folder, fname.replace('.png', '.txt'))
 
