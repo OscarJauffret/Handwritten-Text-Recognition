@@ -37,6 +37,7 @@ class Config:
         sentences_sizes_path = os.path.join(data_path, "sentences_sizes.xml")
 
         models_path = os.path.join(project_root, "models")
+        resume_checkpoint = os.path.join(models_path, "first_model_1.16CTC.pth")
 
     class Colors:
         blue = '\033[94m'

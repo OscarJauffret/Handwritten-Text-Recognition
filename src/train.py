@@ -24,6 +24,11 @@ def train():
     # Load the models, loss function, and optimizer
     num_classes = len(Config.Model.alphabet) + 1  # +1 for the blank character
     model = CRNN(num_classes=num_classes).to(device)
+
+    if Config.Paths.resume_checkpoint is not None:
+        print(f"Loading model checkpoint from {Config.Paths.resume_checkpoint}...")
+        model.load_state_dict(torch.load(Config.Paths.resume_checkpoint, map_location=device))
+
     trainer = Trainer(model, lr=0.0001, patience=5, device=device)
     
     # Training
