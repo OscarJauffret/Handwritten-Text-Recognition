@@ -56,6 +56,7 @@ class Config:
         output_width = 32
         alphabet = string.ascii_lowercase + string.ascii_uppercase + string.digits + " .,;'-()\"!&:?#+*/"
         epochs = -1     # Maximum number of epochs, put -1 for infinite (until validation is not done)
-        learning_rate = 0.0001
-        batch_size = 4000
+        learning_rate = 0.001
+        batch_size = 400
+        patience = 10
         num_workers = 0     # Use 0 because we are already preloading the dataset on GPU

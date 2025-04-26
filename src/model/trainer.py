@@ -1,9 +1,13 @@
 import torch
 import os
 import datetime
-from torch import optim
 import torch.nn as nn
 import editdistance
+import math
+
+from torch import optim
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+
 from ..config import Config
 from ..utils.utils import encode_texts, decode_output
 
@@ -23,25 +27,23 @@ class Trainer:
         self.patience = patience  # Number of epochs without improvement before stopping
         self.patience_counter = 0
         self.best_val_cer = float("inf")  # Initialize the best validation character error rate
-        self.scaler = torch.cuda.amp.GradScaler()
+        self.scheduler = ReduceLROnPlateau(self.optimizer, mode='min', factor=0.5, patience=math.floor(self.patience/5))
 
     def train_step(self, images, texts):
         images = images.to(self.device)
 
-        with torch.cuda.amp.autocast():
-            input_lengths, outputs, target_lengths, targets = self.forward(images, texts)
+        input_lengths, outputs, target_lengths, targets = self.forward(images, texts)
 
-            if torch.isnan(outputs).any():
-                print(f"{Config.Colors.error}⚠️ NaN detected in the output. Skipping this batch.{Config.Colors.reset}", end=" ")
-                print(f"{Config.Colors.gray}Texts: {texts}{Config.Colors.reset}")
-                return None
+        if torch.isnan(outputs).any():
+            print(f"{Config.Colors.error}⚠️ NaN detected in the output. Skipping this batch.{Config.Colors.reset}", end=" ")
+            print(f"{Config.Colors.gray}Texts: {texts}{Config.Colors.reset}")
+            return None
 
-            loss = self.criterion(outputs.permute(1, 0, 2), targets, input_lengths, target_lengths)
+        loss = self.criterion(outputs.permute(1, 0, 2), targets, input_lengths, target_lengths)
 
         self.optimizer.zero_grad()
-        self.scaler.scale(loss).backward()
-        self.scaler.step(self.optimizer)
-        self.scaler.update()
+        loss.backward()
+        self.optimizer.step()
 
         return loss.item()
 
@@ -94,7 +96,6 @@ class Trainer:
                 if loss is not None:
                     epoch_loss += loss
             epoch_loss /= len(train_loader)
-            print(f"Epoch {epoch + 1}/{epochs if epochs != -1 else '∞'}, Loss: {epoch_loss:.4f}")
 
             # Validation phase
             val_cer = 0
@@ -104,7 +105,13 @@ class Trainer:
                     cer = self.validate_step(images, texts)
                     val_cer += cer
             val_cer /= len(val_loader)
+
+            print("=" * 60)
+            print(f"Epoch {epoch + 1}/{epochs if epochs != -1 else '∞'}")
+            print(f"Training Loss: {epoch_loss:.4f}")
             print(f"Validation CER: {val_cer:.4f}")
+            print(f"Learning Rate: {self.scheduler.optimizer.param_groups[0]['lr']:.6f}")
+            print("=" * 60)
 
             if val_cer < self.best_val_cer:
                 self.best_val_cer = val_cer
@@ -117,6 +124,8 @@ class Trainer:
                 if self.patience_counter >= self.patience:
                     print("Early stopping triggered.")
                     break
+
+            self.scheduler.step(val_cer)
 
             # Save the models after each epoch
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")

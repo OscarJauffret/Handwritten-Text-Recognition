@@ -38,7 +38,7 @@ def train():
     else:
         print("No checkpoint provided, starting from scratch...")
 
-    trainer = Trainer(model, lr=0.0001, patience=5, device=device)
+    trainer = Trainer(model, lr=Config.Model.learning_rate, patience=Config.Model.patience, device=device)
     
     # Training
     trainer.train(train_loader, val_loader, epochs=Config.Model.epochs)
