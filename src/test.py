@@ -3,12 +3,19 @@ import numpy as np
 import os
 import random
 import matplotlib.pyplot as plt
-from skimage.io import imread
+import textwrap
 import editdistance
+import argparse
+
+from skimage.io import imread
+
 
 from .model.CRNN import CRNN
 from .config import Config
 from .utils.utils import decode_output
+
+arg_parser = argparse.ArgumentParser()
+arg_parser.add_argument('--fullpage', action='store_true', help='Whether to test on a full page or a random sample')
 
 class Inferer:
     def __init__(self, model_path, test_folder, labels_folder, device=None):
@@ -29,6 +36,52 @@ class Inferer:
     def calculate_cer(self, prediction, ground_truth):
         return editdistance.eval(prediction, ground_truth) / max(len(ground_truth), 1)
 
+    def predict(self, image_path):
+        image = self.preprocess_image(image_path)
+        with torch.no_grad():
+            outputs = self.model(image)
+            outputs = outputs.log_softmax(2)
+        prediction = decode_output(outputs)[0]
+        return prediction
+
+    def get_ground_truth(self, image_path):
+        label_file_name = image_path.split("/")[-1].split(".")[0] + ".txt"
+        label_path = os.path.join(self.labels_folder, label_file_name)
+        with open(label_path, 'r', encoding='utf-8') as f:
+            ground_truth = f.readline().strip()
+        return ground_truth
+
+    def plot_prediction(self, image_path, prediction, ground_truth, cer, save_plot, output_folder, file, fullpage=False):
+        img = imread(image_path, as_gray=True)
+
+        if fullpage:
+            figsize = (12, 8)
+        else:
+            height, width = img.shape
+            dpi = 100
+            figsize = (width / dpi + 2, height / dpi + 2)
+
+        plt.figure(figsize=figsize)
+        plt.imshow(img, cmap='gray', aspect='equal')
+        plt.axis('off')
+        plt.title(f"CER: {cer:.4f}")
+        plt.subplots_adjust(left=0.15, bottom=0.05, right=0.85, top=0.95, wspace=0.05, hspace=0.05)
+
+        # Wrap long texts
+        wrapped_prediction = "\n".join(textwrap.wrap(prediction, width=150))
+        wrapped_ground_truth = "\n".join(textwrap.wrap(ground_truth, width=150))
+        plt.suptitle(f"Prediction:\n{wrapped_prediction}\n\nGround Truth:\n{wrapped_ground_truth}", fontsize=10)
+
+        plt.tight_layout()
+
+        if save_plot:
+            if not os.path.exists(output_folder):
+                os.makedirs(output_folder)
+            plt.savefig(os.path.join(output_folder, f"{file.split('.')[0]}_qualitative_test.png"))
+            plt.close()
+        else:
+            plt.show()
+
     def test_random_samples(self, num_samples=5, save_plots=False, output_folder="plots", random_seed=None):
         if random_seed is not None:
             random.seed(random_seed)
@@ -41,44 +94,55 @@ class Inferer:
 
         for file in selected_files:
             img_path = os.path.join(self.test_folder, file)
-            image = self.preprocess_image(img_path)
-
-            with torch.no_grad():
-                outputs = self.model(image)
-                outputs = outputs.log_softmax(2)
-
-            prediction = decode_output(outputs)[0]
-            label_file_name = file.split(".")[0] + ".txt"
-            label_path = os.path.join(self.labels_folder, label_file_name)
-            with open(label_path, 'r', encoding='utf-8') as f:
-                ground_truth = f.readline().strip()
+            prediction = self.predict(img_path)
+            ground_truth = self.get_ground_truth(img_path)
 
             cer = self.calculate_cer(prediction, ground_truth)
 
-            img = imread(img_path, as_gray=True)
-            height, width = img.shape
-            dpi = 100
-            figsize = (width / dpi + 2, height / dpi + 2)
+            self.plot_prediction(img_path, prediction, ground_truth, cer, save_plots, output_folder, file)
 
-            plt.figure(figsize=figsize, dpi=dpi)
-            plt.imshow(img, cmap='gray', aspect='auto')
-            plt.axis('off')
-            plt.subplots_adjust(left=0.1, right=0.9, top=0.8, bottom=0.2)
 
-            plt.title(f"Prediction: {prediction}\nGround Truth: {ground_truth}\nCER: {cer:.4f}")
-            plt.tight_layout()
+    def test_full_page(self, save_plot=False, output_folder="plots", random_seed=None):
+        if random_seed is not None:
+            random.seed(random_seed)
 
-            if save_plots:
-                plt.savefig(os.path.join(output_folder, f"{file.split('.')[0]}_qualitative_test.png"))
-                plt.close()
-            else:
-                plt.show()
+        # Pick a random full page image
+        full_page_files = [f for f in os.listdir(Config.Paths.test_images) if f.endswith('.png')]
+        selected_file = random.choice(full_page_files)
+        base_name = selected_file.split(".")[0]
+
+        # Find all corresponding word images
+        word_images = sorted([
+            f for f in os.listdir(self.test_folder) if f.startswith(base_name) and f.endswith('.png')
+        ])
+
+        reconstructed_text = []
+        ground_truth_text = []
+
+        for word_file in word_images:
+            word_path = os.path.join(self.test_folder, word_file)
+            prediction = self.predict(word_path)
+            reconstructed_text.append(prediction)
+            ground_truth = self.get_ground_truth(word_path)
+            ground_truth_text.append(ground_truth)
+
+        reconstructed_sentence = ' '.join(reconstructed_text)
+        ground_truth_sentence = ' '.join(ground_truth_text)
+        cer = self.calculate_cer(reconstructed_sentence, ground_truth_sentence)
+
+        # Plot the full page
+        self.plot_prediction( os.path.join(Config.Paths.test_images, selected_file), reconstructed_sentence,
+                              ground_truth_sentence, cer, save_plot, output_folder, selected_file, True)
 
 
 if __name__ == '__main__':
-    model_path = os.path.join(Config.Paths.models_path, "fourth_cer_0.17.pth")
+    args = arg_parser.parse_args()
+    model_path = os.path.join(Config.Paths.models_path, "sixth_cer_sameas5_0.13.pth")
     test_folder = Config.Paths.test_words
     labels_folder = Config.Paths.test_labels
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     inferer = Inferer(model_path, test_folder, labels_folder, device)
-    inferer.test_random_samples(num_samples=5)
+    if args.fullpage:
+        inferer.test_full_page(save_plot=False)
+    else:
+        inferer.test_random_samples(num_samples=5)
