@@ -23,6 +23,7 @@ class CRNN(nn.Module):
             # Each new filtered image is a combination of the previous 64 images
             nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
+            nn.Dropout2d(0.2),
             nn.MaxPool2d((2, 2)),  # (8, 32) This is the size of the output of the CNN
 
             #nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
