@@ -119,5 +119,5 @@ class Trainer:
 
             # Save the models after each epoch
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            torch.save(self.model.state_dict(), os.path.join(Config.Paths.models_path, f"model_{timestamp}.pth"))
+            torch.save(self.model.state_dict(), os.path.join(Config.Paths.models_path, f"model_{timestamp}_{val_cer:.4f}.pth"))
             epoch += 1

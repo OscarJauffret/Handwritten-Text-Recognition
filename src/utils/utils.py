@@ -35,13 +35,13 @@ def decode_output(output):
     :return: List of decoded texts, one per batch element
     """
     _, indices = torch.max(output, 2)  # Take the index of the highest probability class
-    indices = indices.cpu().numpy()
-
     decoded_texts = []
+
     for seq in indices:
         decoded_text = ""
         prev_idx = None
         for idx in seq:
+            idx = idx.item()
             # In CTC decoding, repeated characters without an intervening blank are considered a single instance.
             # The model uses a special blank token (index 0) to distinguish between real repeated characters (e.g., 'll' in "hello").
             # Therefore, during decoding:
