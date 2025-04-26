@@ -3,13 +3,14 @@ import os
 import datetime
 from torch import optim
 import torch.nn as nn
+import editdistance
 from ..config import Config
-from ..utils.utils import encode_texts
+from ..utils.utils import encode_texts, decode_output
 
 class Trainer:
     def __init__(self, model, lr, patience, device):
         self.model = model
-        
+
         # The optimizer automatically updates the learning rate of the models. It works well with CRNNs
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
         self.device = device
@@ -21,14 +22,13 @@ class Trainer:
         # Use the following command in the terminal to fall back to CPU: export PYTORCH_ENABLE_MPS_FALLBACK=1
         self.patience = patience  # Number of epochs without improvement before stopping
         self.patience_counter = 0
-        self.best_val_loss = float("inf")  # Initialize the best validation loss to infinity
+        self.best_val_cer = float("inf")  # Initialize the best validation character error rate
 
     def train_step(self, images, texts):
         input_lengths, outputs, target_lengths, targets = self.forward(images, texts)
 
         if torch.isnan(outputs).any():  # https://discuss.pytorch.org/t/best-practices-to-solve-nan-ctc-loss/151913
-            print(f"{Config.Colors.error}⚠️ NaN detected in the output. Skipping this batch.{Config.Colors.reset}",
-                  end=" ")
+            print(f"{Config.Colors.error}⚠️ NaN detected in the output. Skipping this batch.{Config.Colors.reset}", end=" ")
             print(f"{Config.Colors.gray}Texts: {texts}{Config.Colors.reset}")
             return
 
@@ -58,11 +58,26 @@ class Trainer:
         return input_lengths, outputs, target_lengths, targets
 
     def validate_step(self, images, texts):
-        input_lengths, outputs, target_lengths, targets = self.forward(images, texts)
-        loss = self.criterion(outputs.permute(1, 0, 2), targets, input_lengths, target_lengths)
+        """
+        Validates the model's step by computing the Character Error Rate (CER) of predictions
+        against ground truth texts
 
-        return loss.item()
-    
+        :param images: A batch of input image tensors representing textual information.
+        :param texts: A list of ground truth strings associated with the input images.
+        :return: The average Character Error Rate (CER) computed across all predictions in the batch.
+        """
+        input_lengths, outputs, target_lengths, targets = self.forward(images, texts)
+        _, indices = torch.max(outputs, 2)
+        predictions = [decode_output(ind) for ind in indices]
+
+        total_cer = 0
+        for pred_text, true_text in zip(predictions, texts):
+            cer = editdistance.eval(pred_text, true_text) / max(len(true_text), 1)
+            total_cer += cer
+
+        average_cer = total_cer / len(texts)
+        return average_cer
+
     def train(self, train_loader, val_loader, epochs):
         if not os.path.exists(Config.Paths.models_path):
             os.makedirs(Config.Paths.models_path)
@@ -81,21 +96,20 @@ class Trainer:
             print(f"Epoch {epoch + 1}/{epochs if epochs != -1 else '∞'}, Loss: {epoch_loss:.4f}")
 
             # Validation phase
+            val_cer = 0
             self.model.eval()
-            val_loss = 0
             with torch.no_grad():
                 for images, texts in val_loader:
-                    loss = self.validate_step(images, texts)
-                    val_loss += loss
-            val_loss /= len(val_loader)
-            print(f"Validation Loss: {val_loss:.4f}")
+                    cer = self.validate_step(images, texts)
+                    val_cer += cer
+            val_cer /= len(val_loader)
+            print(f"Validation CER: {val_cer:.4f}")
 
-            if val_loss < self.best_val_loss:
-                self.best_val_loss = val_loss
+            if val_cer < self.best_val_cer:
+                self.best_val_cer = val_cer
                 self.patience_counter = 0
-                # Save the best models
                 torch.save(self.model.state_dict(), os.path.join(Config.Paths.models_path, "best_model.pth"))
-                print("New best models saved.")
+                print("New best model saved.")
             else:
                 self.patience_counter += 1
                 print(f"No improvement. Patience: {self.patience_counter}/{self.patience}")

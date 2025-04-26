@@ -27,13 +27,16 @@ def encode_texts(texts):
     return torch.tensor(encoded, dtype=torch.long)
 
 
-def decode_output(char_to_idx, output):
+def decode_output(output):
     """
     Decode the output of the models to text.
 
     :param output: Output of the models
     :return: Decoded text
     """
+    char_to_idx = {char: idx + 1 for idx, char in enumerate(Config.Model.alphabet)}
+    char_to_idx["<BLANK>"] = 0  # Blank character for CTC loss
+
     _, indices = torch.max(output, 2) # Get the index with the highest probability
     indices = indices.squeeze(1).cpu().numpy()  # Remove the batch dimension and convert to NumPy
 
