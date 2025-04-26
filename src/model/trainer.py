@@ -23,24 +23,25 @@ class Trainer:
         self.patience = patience  # Number of epochs without improvement before stopping
         self.patience_counter = 0
         self.best_val_cer = float("inf")  # Initialize the best validation character error rate
+        self.scaler = torch.cuda.amp.GradScaler()
 
     def train_step(self, images, texts):
-        input_lengths, outputs, target_lengths, targets = self.forward(images, texts)
+        images = images.to(self.device)
 
-        if torch.isnan(outputs).any():  # https://discuss.pytorch.org/t/best-practices-to-solve-nan-ctc-loss/151913
-            print(f"{Config.Colors.error}⚠️ NaN detected in the output. Skipping this batch.{Config.Colors.reset}", end=" ")
-            print(f"{Config.Colors.gray}Texts: {texts}{Config.Colors.reset}")
-            return
+        with torch.cuda.amp.autocast():
+            input_lengths, outputs, target_lengths, targets = self.forward(images, texts)
 
-        # Calculate the loss
-        # targets is the real text
-        # input_lengths is the number of columns that the models outputs for each image
-        # target_lengths is the length of the real text
-        # Permute the output because we want the batch dimension to be the first one
-        loss = self.criterion(outputs.permute(1, 0, 2), targets, input_lengths, target_lengths)
-        self.optimizer.zero_grad()  # Clear the gradients.
-        loss.backward()  # Calculate the gradients
-        self.optimizer.step()  # Update the weights
+            if torch.isnan(outputs).any():
+                print(f"{Config.Colors.error}⚠️ NaN detected in the output. Skipping this batch.{Config.Colors.reset}", end=" ")
+                print(f"{Config.Colors.gray}Texts: {texts}{Config.Colors.reset}")
+                return None
+
+            loss = self.criterion(outputs.permute(1, 0, 2), targets, input_lengths, target_lengths)
+
+        self.optimizer.zero_grad()
+        self.scaler.scale(loss).backward()
+        self.scaler.step(self.optimizer)
+        self.scaler.update()
 
         return loss.item()
 
