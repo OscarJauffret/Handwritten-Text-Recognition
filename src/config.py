@@ -58,5 +58,6 @@ class Config:
         epochs = -1     # Maximum number of epochs, put -1 for infinite (until validation is not done)
         learning_rate = 0.001
         batch_size = 32
+        hidden_size = 256
         patience = 10
         num_workers = 0     # Use 0 because we are already preloading the dataset on GPU

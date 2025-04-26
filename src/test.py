@@ -21,7 +21,7 @@ class Inferer:
     def __init__(self, model_path, test_images_folder, test_words_folder, labels_folder, device=None):
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         num_classes = len(Config.Model.alphabet) + 1  # +1 for CTC blank
-        self.model = CRNN(num_classes=num_classes).to(self.device)
+        self.model = CRNN(num_classes, Config.Model.hidden_size).to(self.device)
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.eval()
 
@@ -139,7 +139,7 @@ class Inferer:
 
 if __name__ == '__main__':
     args = arg_parser.parse_args()
-    model_path = os.path.join(Config.Paths.models_path, "sixth_cer_sameas5_0.13.pth")
+    model_path = os.path.join(Config.Paths.models_path, "6_cer_sameas5_13.9.pth")
     test_images_folder = Config.Paths.test_images
     test_words_folder = Config.Paths.test_words
     labels_folder = Config.Paths.test_labels

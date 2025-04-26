@@ -19,7 +19,7 @@ def train():
 
     dataset = HandwritingDataset(Config.Paths.train_words, Config.Paths.train_labels, device)
     # Training a models on a single image at a time would be too slow, so we create a batch of 8 images which will be fed to the models at once.
-    # A batch is a mini-group that will do a single update of the models's weights.
+    # A batch is a mini-group that will do a single update of the models' weights.
     # A batch size of 8 is a good compromise between speed and not too much memory usage.
     train_loader = DataLoader(dataset, batch_size=Config.Model.batch_size, shuffle=True, num_workers=Config.Model.num_workers)  # Shuffling avoids the models learning the order of the images
 
@@ -29,7 +29,7 @@ def train():
 
     # Load the models, loss function, and optimizer
     num_classes = len(Config.Model.alphabet) + 1  # +1 for the blank character
-    model = CRNN(num_classes=num_classes).to(device)
+    model = CRNN(num_classes, Config.Model.hidden_size).to(device)
 
     if args.checkpoint is not None:
         checkpoint = os.path.join(Config.Paths.models_path, args.checkpoint)
