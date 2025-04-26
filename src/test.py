@@ -56,10 +56,15 @@ class Inferer:
             cer = self.calculate_cer(prediction, ground_truth)
 
             img = imread(img_path, as_gray=True)
+            height, width = img.shape
+            dpi = 100
+            figsize = (width / dpi + 2, height / dpi + 2)
 
-            plt.figure()
+            plt.figure(figsize=figsize, dpi=dpi)
             plt.imshow(img, cmap='gray', aspect='auto')
             plt.axis('off')
+            plt.subplots_adjust(left=0.1, right=0.9, top=0.8, bottom=0.2)
+
             plt.title(f"Prediction: {prediction}\nGround Truth: {ground_truth}\nCER: {cer:.4f}")
             plt.tight_layout()
 
@@ -71,7 +76,7 @@ class Inferer:
 
 
 if __name__ == '__main__':
-    model_path = os.path.join(Config.Paths.models_path, "first_model_1.16CTC.pth")
+    model_path = os.path.join(Config.Paths.models_path, "fourth_cer_0.17.pth")
     test_folder = Config.Paths.test_words
     labels_folder = Config.Paths.test_labels
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

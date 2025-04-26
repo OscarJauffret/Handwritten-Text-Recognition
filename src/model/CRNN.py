@@ -44,6 +44,7 @@ class CRNN(nn.Module):
         # bidirectional is set to True to process the sequence from left to right and right to left
         # batch_first is set to True to have the input in the form (batch, sequence, feature)
         self.rnn = nn.LSTM(input_size=128, hidden_size=hidden_size, num_layers=2, bidirectional=True, batch_first=True)
+        self.dropout = nn.Dropout(0.5)
 
         # Output layer
         self.fc = nn.Linear(hidden_size * 2, num_classes)  # BiLSTM -> num_classes
@@ -57,6 +58,7 @@ class CRNN(nn.Module):
         x = x.permute(0, 2, 1)  # Permute the dimensions to have the sequence length as the second dimension
 
         x, _ = self.rnn(x)  # LSTM layers
+        x = self.dropout(x)  # Apply dropout
         x = self.fc(x)  # Fully connected
 
         return x
