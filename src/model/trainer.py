@@ -4,6 +4,7 @@ import datetime
 import torch.nn as nn
 import editdistance
 import math
+import matplotlib.pyplot as plt
 
 from torch import optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -28,6 +29,7 @@ class Trainer:
         self.patience_counter = 0
         self.best_val_cer = float("inf")  # Initialize the best validation character error rate
         self.scheduler = ReduceLROnPlateau(self.optimizer, mode='min', factor=0.5, patience=math.floor(self.patience/5))
+        self.val_cer_history = []
 
     def train_step(self, images, texts):
         images = images.to(self.device)
@@ -105,6 +107,7 @@ class Trainer:
                     cer = self.validate_step(images, texts)
                     val_cer += cer
             val_cer /= len(val_loader)
+            self.val_cer_history.append(val_cer)
 
             print("=" * 60)
             print(f"Epoch {epoch + 1}/{epochs if epochs != -1 else '∞'}")
@@ -131,3 +134,13 @@ class Trainer:
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             torch.save(self.model.state_dict(), os.path.join(Config.Paths.models_path, f"model_{timestamp}_{val_cer:.4f}.pth"))
             epoch += 1
+
+        # Plot CER evolution
+        plt.figure(figsize=(8, 6))
+        plt.plot(self.val_cer_history, marker='o')
+        plt.title('Validation CER Over Epochs')
+        plt.xlabel('Epoch')
+        plt.ylabel('CER')
+        plt.grid(True)
+        plt.savefig(os.path.join(Config.Paths.models_path, "cer_evolution.png"))
+        plt.close()
