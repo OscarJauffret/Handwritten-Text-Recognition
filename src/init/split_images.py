@@ -91,5 +91,5 @@ if __name__ == "__main__":
     ]:
         print(f"🚀 Processing {dataset_type} images...")
         files = os.listdir(img_path)
-        for file in tqdm(files, desc=f"📂 {dataset_type} Progress", unit="image"):
+        for file in tqdm(files, desc=f"📂 {dataset_type} Progress", unit="image", mininterval=2.0):
             splitting_function[1](os.path.join(img_path, file), save_path)
