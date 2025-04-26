@@ -12,19 +12,21 @@ from skimage.io import imread
 
 from .model.CRNN import CRNN
 from .config import Config
-from .utils.utils import decode_output
+from .utils.utils import decode_output, select_device
 
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument('--fullpage', action='store_true', help='Whether to test on a full page or a random sample')
 
 class Inferer:
-    def __init__(self, model_path, test_folder, labels_folder, device=None):
+    def __init__(self, model_path, test_images_folder, test_words_folder, labels_folder, device=None):
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         num_classes = len(Config.Model.alphabet) + 1  # +1 for CTC blank
         self.model = CRNN(num_classes=num_classes).to(self.device)
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.eval()
-        self.test_folder = test_folder
+
+        self.test_images_folder = test_images_folder
+        self.test_words_folder = test_words_folder
         self.labels_folder = labels_folder
 
     def preprocess_image(self, image_path):
@@ -64,7 +66,7 @@ class Inferer:
         plt.figure(figsize=figsize)
         plt.imshow(img, cmap='gray', aspect='equal')
         plt.axis('off')
-        plt.title(f"CER: {cer:.4f}")
+        plt.title(f"CER: {cer * 100:.2f}%")
         plt.subplots_adjust(left=0.15, bottom=0.05, right=0.85, top=0.95, wspace=0.05, hspace=0.05)
 
         # Wrap long texts
@@ -86,14 +88,14 @@ class Inferer:
         if random_seed is not None:
             random.seed(random_seed)
 
-        image_files = [f for f in os.listdir(self.test_folder) if f.endswith('.png')]
+        image_files = [f for f in os.listdir(self.test_words_folder) if f.endswith('.png')]
         selected_files = random.sample(image_files, min(num_samples, len(image_files)))
 
         if save_plots and not os.path.exists(output_folder):
             os.makedirs(output_folder)
 
         for file in selected_files:
-            img_path = os.path.join(self.test_folder, file)
+            img_path = os.path.join(self.test_words_folder, file)
             prediction = self.predict(img_path)
             ground_truth = self.get_ground_truth(img_path)
 
@@ -107,20 +109,20 @@ class Inferer:
             random.seed(random_seed)
 
         # Pick a random full page image
-        full_page_files = [f for f in os.listdir(Config.Paths.test_images) if f.endswith('.png')]
+        full_page_files = [f for f in os.listdir(self.test_images_folder) if f.endswith('.png')]
         selected_file = random.choice(full_page_files)
         base_name = selected_file.split(".")[0]
 
         # Find all corresponding word images
         word_images = sorted([
-            f for f in os.listdir(self.test_folder) if f.startswith(base_name) and f.endswith('.png')
+            f for f in os.listdir(self.test_words_folder) if f.startswith(base_name) and f.endswith('.png')
         ])
 
         reconstructed_text = []
         ground_truth_text = []
 
         for word_file in word_images:
-            word_path = os.path.join(self.test_folder, word_file)
+            word_path = os.path.join(self.test_words_folder, word_file)
             prediction = self.predict(word_path)
             reconstructed_text.append(prediction)
             ground_truth = self.get_ground_truth(word_path)
@@ -131,17 +133,18 @@ class Inferer:
         cer = self.calculate_cer(reconstructed_sentence, ground_truth_sentence)
 
         # Plot the full page
-        self.plot_prediction( os.path.join(Config.Paths.test_images, selected_file), reconstructed_sentence,
+        self.plot_prediction(os.path.join(self.test_images_folder, selected_file), reconstructed_sentence,
                               ground_truth_sentence, cer, save_plot, output_folder, selected_file, True)
 
 
 if __name__ == '__main__':
     args = arg_parser.parse_args()
     model_path = os.path.join(Config.Paths.models_path, "sixth_cer_sameas5_0.13.pth")
-    test_folder = Config.Paths.test_words
+    test_images_folder = Config.Paths.test_images
+    test_words_folder = Config.Paths.test_words
     labels_folder = Config.Paths.test_labels
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    inferer = Inferer(model_path, test_folder, labels_folder, device)
+    device = select_device()
+    inferer = Inferer(model_path, test_images_folder, test_words_folder, labels_folder, device)
     if args.fullpage:
         inferer.test_full_page(save_plot=False)
     else:
