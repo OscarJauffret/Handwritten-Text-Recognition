@@ -29,26 +29,30 @@ def encode_texts(texts):
 
 def decode_output(output):
     """
-    Decode the output of the models to text.
+    Decode the output tensor from the model into readable text.
 
-    :param output: Output of the models
-    :return: Decoded text
+    :param output: Output tensor of shape [B, T, C] (Batch, Time, Classes)
+    :return: List of decoded texts, one per batch element
     """
-    char_to_idx = {char: idx + 1 for idx, char in enumerate(Config.Model.alphabet)}
-    char_to_idx["<BLANK>"] = 0  # Blank character for CTC loss
+    # Permute to [Batch, Time, Classes] for easier decoding
+    _, indices = torch.max(output, 2)  # Take the index of the highest probability class
 
-    _, indices = torch.max(output, 2) # Get the index with the highest probability
-    indices = indices.squeeze(1).cpu().numpy()  # Remove the batch dimension and convert to NumPy
+    decoded_texts = []
+    for seq in indices:
+        decoded_text = ""
+        prev_idx = None
+        for idx in seq.cpu().numpy():
+            # In CTC decoding, repeated characters without an intervening blank are considered a single instance.
+            # The model uses a special blank token (index 0) to distinguish between real repeated characters (e.g., 'll' in "hello").
+            # Therefore, during decoding:
+            # - Ignore repeated characters if they directly follow each other without a blank.
+            # - Allow repetition if separated by a blank.
+            if idx != 0 and idx != prev_idx:  # Ignore blank and repeated characters
+                decoded_text += Config.Model.alphabet[idx - 1]  # Convert index to character (blank is at index 0)
+            prev_idx = idx
+        decoded_texts.append(decoded_text)
 
-    decoded_text = ""
-    prev_idx = None
-
-    for idx in indices:
-        if idx != 0 and idx != prev_idx:  # Ignore the blank character and consecutive duplicates
-            decoded_text += list(char_to_idx.keys())[list(char_to_idx.values()).index(idx)]  # Convert the index to the corresponding character
-        prev_idx = idx
-
-    return decoded_text
+    return decoded_texts
 
 def select_device():
     """

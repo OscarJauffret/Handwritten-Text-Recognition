@@ -36,6 +36,7 @@ class Trainer:
         # targets is the real text
         # input_lengths is the number of columns that the models outputs for each image
         # target_lengths is the length of the real text
+        # Permute the output because we want the batch dimension to be the first one
         loss = self.criterion(outputs.permute(1, 0, 2), targets, input_lengths, target_lengths)
         self.optimizer.zero_grad()  # Clear the gradients.
         loss.backward()  # Calculate the gradients
@@ -67,8 +68,7 @@ class Trainer:
         :return: The average Character Error Rate (CER) computed across all predictions in the batch.
         """
         input_lengths, outputs, target_lengths, targets = self.forward(images, texts)
-        _, indices = torch.max(outputs, 2)
-        predictions = [decode_output(ind) for ind in indices]
+        predictions = decode_output(outputs)
 
         total_cer = 0
         for pred_text, true_text in zip(predictions, texts):
