@@ -1,12 +1,18 @@
 import torch
+import os
 
 from src.model.CRNN import CRNN
 from .utils.utils import select_device
 from src.model.dataset import HandwritingDataset
 from torch.utils.data import DataLoader
 from src.model.trainer import Trainer
+from argparse import ArgumentParser
 
 from .config import Config
+
+arg_parser = ArgumentParser()
+arg_parser.add_argument('--checkpoint', type=str, default=None, help='Path to the checkpoint file to resume training from')
+args = arg_parser.parse_args()
 
 def train():
     device = select_device()
@@ -25,9 +31,12 @@ def train():
     num_classes = len(Config.Model.alphabet) + 1  # +1 for the blank character
     model = CRNN(num_classes=num_classes).to(device)
 
-    if Config.Paths.resume_checkpoint is not None:
-        print(f"Loading model checkpoint from {Config.Paths.resume_checkpoint}...")
-        model.load_state_dict(torch.load(Config.Paths.resume_checkpoint, map_location=device))
+    if args.checkpoint is not None:
+        checkpoint = os.path.join(Config.Paths.models_path, args.checkpoint)
+        print(f"Loading model checkpoint from {checkpoint}...")
+        model.load_state_dict(torch.load(str(checkpoint), map_location=device))
+    else:
+        print("No checkpoint provided, starting from scratch...")
 
     trainer = Trainer(model, lr=0.0001, patience=5, device=device)
     
