@@ -12,14 +12,14 @@ class CRNN(nn.Module):
             # stride is the step of the filter
             # padding is the number of pixels to add around the image
             # The idea is that we will apply multiple filters to the image to try to detect different features
-            nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1),  # (32, 128) -> (64, 32, 128)
+            nn.Conv2d(1, 128, kernel_size=3, stride=1, padding=1),  # (32, 128) -> (64, 32, 128)
             nn.ReLU(),
             # Max pool keeps the maximum value in a window of 2x2
             nn.MaxPool2d((2, 2)),  # (16, 64)
 
             # Takes the 64 channels from the previous layer and applies 128 filters
             # Each new filtered image is a combination of the previous 64 images
-            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
             nn.Dropout2d(0.2),
             nn.MaxPool2d((2, 2)),  # (8, 32) This is the size of the output of the CNN
@@ -36,13 +36,13 @@ class CRNN(nn.Module):
         # Each "column" of the image will be processed by the RNN. (there are 32 columns)
 
         # RNN layers
-        # The RNN will take the output of the CNN and process it. It will models the relation between the characters in the image.
+        # The RNN will take the output of the CNN and process it. It will model the relation between the characters in the image.
         # input_size is the number of features in the input, which is the number of channels in the last layer of the CNN
         # hidden_size is the number of features in the hidden state
         # num_layers is the number of recurrent layers
         # bidirectional is set to True to process the sequence from left to right and right to left
         # batch_first is set to True to have the input in the form (batch, sequence, feature)
-        self.rnn = nn.LSTM(input_size=128, hidden_size=hidden_size, num_layers=2, bidirectional=True, batch_first=True)
+        self.rnn = nn.LSTM(input_size=256, hidden_size=hidden_size, num_layers=2, bidirectional=True, batch_first=True)
         self.dropout = nn.Dropout(0.5)
 
         # Output layer
