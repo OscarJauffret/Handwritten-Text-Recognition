@@ -34,6 +34,8 @@ class Config:
         validate_words = os.path.join(validate, "words")
         validate_labels = os.path.join(validate, "labels")
 
+        custom = os.path.join(data_path, "custom")  # Here you can put your own images
+
         sentences_sizes_path = os.path.join(data_path, "sentences_sizes.xml")
 
         models_path = os.path.join(project_root, "models")

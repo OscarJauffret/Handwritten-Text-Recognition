@@ -1,5 +1,7 @@
 import torch
+from skimage.color import rgb2gray, rgba2rgb
 from src.config import Config
+
 
 
 def encode_texts(texts):
@@ -53,6 +55,15 @@ def decode_output(output):
         decoded_texts.append(decoded_text)
 
     return decoded_texts
+
+def grayscale(image):
+    if image.ndim == 1:
+        return image
+    if image.ndim == 3:
+        return rgb2gray(image)
+    if image.ndim == 4:
+        return rgb2gray(rgba2rgb(image))
+    return image
 
 def select_device():
     """

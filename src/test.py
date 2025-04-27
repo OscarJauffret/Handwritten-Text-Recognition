@@ -7,15 +7,19 @@ import textwrap
 import editdistance
 import argparse
 
-from skimage.io import imread
+from skimage.io import imread, imsave
 
 
 from .model.CRNN import CRNN
 from .config import Config
-from .utils.utils import decode_output, select_device
+from .utils.utils import decode_output, select_device, grayscale
+from .init.split_images import downsample_image
 
 arg_parser = argparse.ArgumentParser()
-arg_parser.add_argument('--fullpage', action='store_true', help='Whether to test on a full page or a random sample')
+group = arg_parser.add_mutually_exclusive_group()
+group.add_argument('--fullpage', action='store_true', help='Whether to test on a full page or a random sample')
+group.add_argument('--custom', type=str, help='Path to custom image you want to test')
+arg_parser.add_argument('--save', action='store_true', help='Whether to save the image')
 
 class Inferer:
     def __init__(self, model_path, test_images_folder, test_words_folder, labels_folder, device=None):
@@ -136,16 +140,36 @@ class Inferer:
         self.plot_prediction(os.path.join(self.test_images_folder, selected_file), reconstructed_sentence,
                               ground_truth_sentence, cer, save_plot, output_folder, selected_file, True)
 
+    def test_custom(self, image_path, temp_path, save_plot=False, output_folder="plots"):
+        img = imread(image_path)
+        img = grayscale(img)
+        img = downsample_image(img, Config.Data.word_height, Config.Data.word_width)
+        if not os.path.exists(temp_path):
+            os.makedirs(temp_path)
+        downsampled_image_path = os.path.join(temp_path, f"{os.path.basename(image_path)}_downsampled.png")
+        imsave(downsampled_image_path, img) # Save the downsampled image
+
+        prediction = self.predict(downsampled_image_path)
+        ground_truth = "N/A"  # No ground truth available for custom images
+        cer = 0.0  # No CER calculation possible without ground truth
+        self.plot_prediction(downsampled_image_path, prediction, ground_truth, cer, save_plot, output_folder,
+                             os.path.basename(image_path), fullpage=False)
+
+        os.remove(downsampled_image_path)
 
 if __name__ == '__main__':
     args = arg_parser.parse_args()
-    model_path = os.path.join(Config.Paths.models_path, "6_cer_sameas5_13.9.pth")
+    model_path = os.path.join(Config.Paths.models_path, "9_largernet_largerlstm_12.67.pth")
     test_images_folder = Config.Paths.test_images
     test_words_folder = Config.Paths.test_words
     labels_folder = Config.Paths.test_labels
     device = select_device()
     inferer = Inferer(model_path, test_images_folder, test_words_folder, labels_folder, device)
-    if args.fullpage:
-        inferer.test_full_page(save_plot=False)
+    if not args.custom:
+        if args.fullpage:
+            inferer.test_full_page(save_plot=args.save)
+        else:
+            inferer.test_random_samples(num_samples=5, save_plots=args.save)
     else:
-        inferer.test_random_samples(num_samples=5)
+        inferer.test_custom(args.custom, "tmp", save_plot=args.save)
+
