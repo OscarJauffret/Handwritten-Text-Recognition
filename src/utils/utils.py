@@ -57,11 +57,11 @@ def decode_output(output):
     return decoded_texts
 
 def grayscale(image):
-    if image.ndim == 1:
+    if image.ndim == 2:
         return image
-    if image.ndim == 3:
+    if image.shape[-1] == 3:
         return rgb2gray(image)
-    if image.ndim == 4:
+    if image.shape[-1] == 4:
         return rgb2gray(rgba2rgb(image))
     return image
 
