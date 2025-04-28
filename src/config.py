@@ -64,17 +64,19 @@ class Config:
         patience = 10
         num_workers = 0     # Use 0 because we are already preloading the dataset on GPU
 
-    class Augmentations:
+    class Augmentation:
         class Probs:
-            dilate = 0.2
-            erode = 0.2
-            gamma_correction = 0.2
-            pixel_dropout = 0.2
-            add_gaussian_noise = 0
-            apply_random_affine = 0
+            dilate = 0.5
+            erode = 0.5
+            gamma_correction = 0.5
+            pixel_dropout = 0.5
+            add_gaussian_noise = 0.5
+            apply_random_affine = 0.5
 
-        dilation_size = 1               # Higher means thinner text
+        dilation_size = 2               # Higher means thinner text
         erosion_size = dilation_size    # Higher means thicker text
         gamma = 0.2                     # Lower means whiter text
         pixel_dropout_prob = 0.2        # Higher means more pixels to white
-        gaussian_sigma = 0.5            # Higher means smoother text
+        gaussian_std = 0.2              # Higher means more noise
+        max_translation = 5             # Higher means more translation
+        max_rotation = 5                # Higher means more rotation

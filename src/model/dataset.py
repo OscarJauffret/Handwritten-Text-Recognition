@@ -49,18 +49,18 @@ class HandwritingDataset(Dataset):
 
     @staticmethod
     def apply_augmentations(image):
-        if np.random.random() < Config.Augmentations.Probs.dilate:
-            image = Augmenter.dilate(image, Config.Augmentations.dilation_size)
-        if np.random.random() < Config.Augmentations.Probs.erode:
-            image = Augmenter.erode(image, Config.Augmentations.erosion_size)
-        if np.random.random() < Config.Augmentations.Probs.gamma_correction:
-            image = Augmenter.gamma_correction(image, Config.Augmentations.gamma)
-        if np.random.random() < Config.Augmentations.Probs.pixel_dropout:
-            image = Augmenter.pixel_dropout(image, Config.Augmentations.pixel_dropout_prob)
-        if np.random.random() < Config.Augmentations.Probs.add_gaussian_noise:
-            image = Augmenter.add_gaussian_noise(image, Config.Augmentations.gaussian_sigma)
-        if np.random.random() < Config.Augmentations.Probs.apply_random_affine:
-            image = Augmenter.apply_random_affine(image)
+        if np.random.random() < Config.Augmentation.Probs.dilate:
+            image = Augmenter.dilate(image, Config.Augmentation.dilation_size)
+        if np.random.random() < Config.Augmentation.Probs.erode:
+            image = Augmenter.erode(image, Config.Augmentation.erosion_size)
+        if np.random.random() < Config.Augmentation.Probs.gamma_correction:
+            image = Augmenter.gamma_correction(image, Config.Augmentation.gamma)
+        if np.random.random() < Config.Augmentation.Probs.pixel_dropout:
+            image = Augmenter.pixel_dropout(image, Config.Augmentation.pixel_dropout_prob)
+        if np.random.random() < Config.Augmentation.Probs.add_gaussian_noise:
+            image = Augmenter.add_gaussian_noise(image, Config.Augmentation.gaussian_std)
+        if np.random.random() < Config.Augmentation.Probs.apply_random_affine:
+            image = Augmenter.apply_random_affine(image, Config.Augmentation.max_translation, Config.Augmentation.max_rotation)
         return image
 
 if __name__ == '__main__':
