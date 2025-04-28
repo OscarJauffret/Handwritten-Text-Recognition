@@ -30,6 +30,7 @@ class Trainer:
         self.best_val_cer = float("inf")  # Initialize the best validation character error rate
         self.scheduler = ReduceLROnPlateau(self.optimizer, mode='min', factor=0.5, patience=math.floor(self.patience/5))
         self.val_cer_history = []
+        self.train_loss_history = []
 
     def train_step(self, images, texts):
         images = images.to(self.device)
@@ -98,6 +99,7 @@ class Trainer:
                 if loss is not None:
                     epoch_loss += loss
             epoch_loss /= len(train_loader)
+            self.train_loss_history.append(epoch_loss)
 
             # Validation phase
             val_cer = 0
@@ -135,12 +137,25 @@ class Trainer:
             torch.save(self.model.state_dict(), os.path.join(Config.Paths.models_path, f"model_{timestamp}_{val_cer:.4f}.pth"))
             epoch += 1
 
-        # Plot CER evolution
-        plt.figure(figsize=(8, 6))
-        plt.plot(self.val_cer_history, marker='o')
-        plt.title('Validation CER Over Epochs')
-        plt.xlabel('Epoch')
-        plt.ylabel('CER')
-        plt.grid(True)
-        plt.savefig(os.path.join(Config.Paths.models_path, "cer_evolution.png"))
+        # Plot CER and Loss evolution
+        plt.figure(figsize=(10, 7))
+        fig, ax1 = plt.subplots()
+
+        ax1.set_xlabel('Epoch')
+        ax1.set_ylabel('Validation CER', color='tab:blue')
+        ax1.plot(self.val_cer_history, marker='o', color='tab:blue', label='Validation CER')
+        ax1.tick_params(axis='y', labelcolor='tab:blue')
+        ax1.grid(True)
+
+        ax2 = ax1.twinx()  # Create second y-axis
+        ax2.set_ylabel('Training Loss', color='tab:red')
+        ax2.plot(self.train_loss_history, marker='x', color='tab:red', label='Training Loss')
+        ax2.tick_params(axis='y', labelcolor='tab:red')
+
+        fig.tight_layout()
+        plt.title('Validation CER and Training Loss Over Epochs')
+        lines, labels = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        fig.legend(lines + lines2, labels + labels2, loc='upper right', bbox_to_anchor=(0.5, -0.05), ncol=2)
+        plt.savefig(os.path.join(Config.Paths.models_path, "cer_loss_evolution.png"))
         plt.close()
