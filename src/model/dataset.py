@@ -1,19 +1,22 @@
-import numpy as np
-import torch
-from torch.utils.data import Dataset, DataLoader
 import os
+import torch
+import numpy as np
+
+from torch.utils.data import Dataset, DataLoader
 from skimage.io import imread
-from ..config import Config
-from ..utils.utils import select_device
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
+from ..config import Config
+from ..utils.utils import select_device
+from ..utils.augmentation import Augmenter
+
 class HandwritingDataset(Dataset):
-    def __init__(self, image_folder, label_folder, device, transform=None):
+    def __init__(self, image_folder, label_folder, device, augment=False):
         self.image_folder = image_folder
         self.label_folder = label_folder
         self.device = device
-        self.transform = transform
+        self.augment = augment
 
         self.image_files = [f for f in os.listdir(image_folder) if f.endswith('.png')]
 
@@ -38,8 +41,27 @@ class HandwritingDataset(Dataset):
         return len(self.image_files)
 
     def __getitem__(self, idx):
-        return self.data[idx], self.labels[idx]
+        image = self.data[idx]
+        label = self.labels[idx]
+        if self.augment:
+            return self.apply_augmentations(image), label
+        return image, label
 
+    @staticmethod
+    def apply_augmentations(image):
+        if np.random.random() < Config.Augmentations.Probs.dilate:
+            image = Augmenter.dilate(image, Config.Augmentations.dilation_size)
+        if np.random.random() < Config.Augmentations.Probs.erode:
+            image = Augmenter.erode(image, Config.Augmentations.erosion_size)
+        if np.random.random() < Config.Augmentations.Probs.gamma_correction:
+            image = Augmenter.gamma_correction(image, Config.Augmentations.gamma)
+        if np.random.random() < Config.Augmentations.Probs.pixel_dropout:
+            image = Augmenter.pixel_dropout(image, Config.Augmentations.pixel_dropout_prob)
+        if np.random.random() < Config.Augmentations.Probs.add_gaussian_noise:
+            image = Augmenter.add_gaussian_noise(image, Config.Augmentations.gaussian_sigma)
+        if np.random.random() < Config.Augmentations.Probs.apply_random_affine:
+            image = Augmenter.apply_random_affine(image)
+        return image
 
 if __name__ == '__main__':
     image_folder = Config.Paths.train_words

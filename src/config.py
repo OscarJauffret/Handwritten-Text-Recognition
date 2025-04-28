@@ -63,3 +63,18 @@ class Config:
         hidden_size = 512
         patience = 10
         num_workers = 0     # Use 0 because we are already preloading the dataset on GPU
+
+    class Augmentations:
+        class Probs:
+            dilate = 0.2
+            erode = 0.2
+            gamma_correction = 0.2
+            pixel_dropout = 0.2
+            add_gaussian_noise = 0
+            apply_random_affine = 0
+
+        dilation_size = 1               # Higher means thinner text
+        erosion_size = dilation_size    # Higher means thicker text
+        gamma = 0.2                     # Lower means whiter text
+        pixel_dropout_prob = 0.2        # Higher means more pixels to white
+        gaussian_sigma = 0.5            # Higher means smoother text
