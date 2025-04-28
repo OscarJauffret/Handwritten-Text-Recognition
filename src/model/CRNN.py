@@ -12,21 +12,21 @@ class CRNN(nn.Module):
             # stride is the step of the filter
             # padding is the number of pixels to add around the image
             # The idea is that we will apply multiple filters to the image to try to detect different features
-            nn.Conv2d(1, 128, kernel_size=3, stride=1, padding=1),  # (32, 128) -> (64, 32, 128)
+            nn.Conv2d(1, 128, kernel_size=3, stride=1, padding=1),  # (64, 256) -> (128, 64, 256)
             nn.ReLU(),
             # Max pool keeps the maximum value in a window of 2x2
-            nn.MaxPool2d((2, 2)),  # (16, 64)
+            nn.MaxPool2d((2, 2)),  # (32, 128)
 
-            # Takes the 64 channels from the previous layer and applies 128 filters
-            # Each new filtered image is a combination of the previous 64 images
+            # Takes the 128 channels from the previous layer and applies 256 filters
+            # Each new filtered image is a combination of the previous 128 images
             nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
             nn.Dropout2d(0.2),
-            nn.MaxPool2d((2, 2)),  # (8, 32) This is the size of the output of the CNN
+            nn.MaxPool2d((2, 2)),  # (16, 64) This is the size of the output of the CNN
 
-            #nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
+            #nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),
             #nn.ReLU(),
-            #nn.MaxPool2d((2, 2)),  # (4, 64)
+            #nn.MaxPool2d((2, 2)),  # (8, 32)
 #
             #nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1),
             #nn.ReLU(),
@@ -50,8 +50,7 @@ class CRNN(nn.Module):
 
     def forward(self, x):
         x = self.cnn(x)  # CNN feature extraction
-        x = x.mean(dim=2)  # The height is still 2, but we want to remove it, so we take the mean
-        # Here, the shape of x is (batch, 512, 32)
+        x = x.mean(dim=2)
 
         # An LSTM expects the input to be of the form (batch, sequence length, feature size) -> (batch, 32, 512)
         x = x.permute(0, 2, 1)  # Permute the dimensions to have the sequence length as the second dimension

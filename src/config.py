@@ -51,11 +51,11 @@ class Config:
     class Data:
         line_width = 512
         line_height = 32
-        word_width = 128
-        word_height = 32
+        word_width = 256
+        word_height = 64
 
     class Model:
-        output_width = 32
+        output_width = 64
         alphabet = string.ascii_lowercase + string.ascii_uppercase + string.digits + " .,;'-()\"!&:?#+*/"
         epochs = -1     # Maximum number of epochs, put -1 for infinite (until validation is not done)
         learning_rate = 0.001
@@ -66,12 +66,12 @@ class Config:
 
     class Augmentation:
         class Probs:
-            dilate = 0.5
-            erode = 0.5
-            gamma_correction = 0.5
-            pixel_dropout = 0.5
-            add_gaussian_noise = 0.5
-            apply_random_affine = 0.5
+            dilate = 0.4
+            erode = 0.4
+            gamma_correction = 0.4
+            pixel_dropout = 0.4
+            add_gaussian_noise = 0.4
+            apply_random_affine = 0.4
 
         dilation_size = 2               # Higher means thinner text
         erosion_size = dilation_size    # Higher means thicker text
