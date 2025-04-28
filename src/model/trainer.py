@@ -149,13 +149,13 @@ class Trainer:
 
         ax2 = ax1.twinx()  # Create second y-axis
         ax2.set_ylabel('Training Loss', color='tab:red')
-        ax2.plot(self.train_loss_history, marker='x', color='tab:red', label='Training Loss')
+        ax2.plot(self.train_loss_history, marker='o', color='tab:red', label='Training Loss')
         ax2.tick_params(axis='y', labelcolor='tab:red')
 
-        fig.tight_layout()
         plt.title('Validation CER and Training Loss Over Epochs')
         lines, labels = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
         fig.legend(lines + lines2, labels + labels2, loc='upper right', bbox_to_anchor=(0.5, -0.05), ncol=2)
+        fig.tight_layout()
         plt.savefig(os.path.join(Config.Paths.models_path, "cer_loss_evolution.png"))
         plt.close()
