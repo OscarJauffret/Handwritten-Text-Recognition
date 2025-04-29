@@ -8,6 +8,7 @@ import editdistance
 import argparse
 
 from skimage.io import imread, imsave
+from skimage.util import img_as_ubyte
 
 
 from .model.CRNN import CRNN
@@ -143,23 +144,38 @@ class Inferer:
     def test_custom(self, image_path, temp_path, save_plot=False, output_folder="plots"):
         img = imread(image_path)
         img = grayscale(img)
-        img = downsample_image(img, Config.Data.word_height, Config.Data.word_width)
+        downsampled_img = downsample_image(img, Config.Data.word_height, Config.Data.word_width)
         if not os.path.exists(temp_path):
             os.makedirs(temp_path)
         downsampled_image_path = os.path.join(temp_path, f"{os.path.basename(image_path)}_downsampled.png")
-        imsave(downsampled_image_path, img) # Save the downsampled image
+        imsave(downsampled_image_path, downsampled_img) # Save the downsampled image
 
         prediction = self.predict(downsampled_image_path)
-        ground_truth = "N/A"  # No ground truth available for custom images
-        cer = 0.0  # No CER calculation possible without ground truth
-        self.plot_prediction(downsampled_image_path, prediction, ground_truth, cer, save_plot, output_folder,
-                             os.path.basename(image_path), fullpage=False)
+
+        height, width = img.shape
+        dpi = 100
+        figsize = (width / dpi + 2, height / dpi + 2)
+
+        plt.figure(figsize=figsize)
+        plt.imshow(img, cmap='gray', aspect='equal')
+        plt.title(f"Prediction: {prediction}")
+        plt.axis('off')
+
+        plt.tight_layout()
+
+        if save_plot:
+            if not os.path.exists(output_folder):
+                os.makedirs(output_folder)
+            plt.savefig(os.path.join(output_folder, f"{os.path.basename(image_path).split('.')[0]}_qualitative_test.png"))
+            plt.close()
+        else:
+            plt.show()
 
         os.remove(downsampled_image_path)
 
 if __name__ == '__main__':
     args = arg_parser.parse_args()
-    model_path = os.path.join(Config.Paths.models_path, "9_largernet_largerlstm_12.67.pth")
+    model_path = os.path.join(Config.Paths.models_path, "14_sameas13_and_augmentation_7.89.pth")
     test_images_folder = Config.Paths.test_images
     test_words_folder = Config.Paths.test_words
     labels_folder = Config.Paths.test_labels
