@@ -55,7 +55,7 @@ class Config:
         word_height = 64
 
     class Model:
-        output_width = 64
+        output_width = 32
         alphabet = string.ascii_lowercase + string.ascii_uppercase + string.digits + " .,;'-()\"!&:?#+*/"
         epochs = -1     # Maximum number of epochs, put -1 for infinite (until validation is not done)
         learning_rate = 0.001
