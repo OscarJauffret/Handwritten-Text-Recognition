@@ -17,7 +17,7 @@ args = arg_parser.parse_args()
 def train():
     device = select_device()
 
-    dataset = HandwritingDataset(Config.Paths.train_words, Config.Paths.train_labels, device, augment=False)
+    dataset = HandwritingDataset(Config.Paths.train_words, Config.Paths.train_labels, device, augment=Config.Model.augmentation)
     # Training a models on a single image at a time would be too slow, so we create a batch of 8 images which will be fed to the models at once.
     # A batch is a mini-group that will do a single update of the models' weights.
     # A batch size of 8 is a good compromise between speed and not too much memory usage.

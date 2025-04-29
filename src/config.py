@@ -63,6 +63,7 @@ class Config:
         hidden_size = 512
         patience = 10
         num_workers = 0     # Use 0 because we are already preloading the dataset on GPU
+        augmentation = True
 
     class Augmentation:
         class Probs:

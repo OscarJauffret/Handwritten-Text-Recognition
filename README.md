@@ -14,9 +14,7 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-## 📋 Workflow Overview
-
-### 🚀 Quick Start
+## 📋 Steps
 
 Run the following script to automatically perform all preprocessing steps:
 
@@ -29,3 +27,13 @@ This script includes:
 - Train/validation/test split
 - Word-level image cropping
 - Label generation
+
+Then, you can train the model
+```bash
+python -m src.train
+```
+
+Finally, you can test the model with
+```bash
+python -m src.test [--fullpage | --custom CUSTOM] [--save]
+```

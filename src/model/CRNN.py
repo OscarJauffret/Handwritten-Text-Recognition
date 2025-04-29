@@ -27,12 +27,8 @@ class CRNN(nn.Module):
             nn.ReLU(),
             nn.Dropout2d(0.2),
             nn.MaxPool2d((2, 2)),  # (8, 32)
-#
-            #nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1),
-            #nn.ReLU(),
-            #nn.MaxPool2d((2, 2))  # (2, 32) is the size of the output of the CNN
         )
-        # The output of the CNN will be of the form (batch, 128, 8, 32), where batch is the number of images in the batch.
+        # The output of the CNN will be of the form (batch, 256, 8, 32), where batch is the number of images in the batch.
         # Each "column" of the image will be processed by the RNN. (there are 32 columns)
 
         # RNN layers
@@ -52,7 +48,7 @@ class CRNN(nn.Module):
         x = self.cnn(x)  # CNN feature extraction
         x = x.mean(dim=2)
 
-        # An LSTM expects the input to be of the form (batch, sequence length, feature size) -> (batch, 32, 512)
+        # An LSTM expects the input to be of the form (batch, sequence length, feature size) -> (batch, 32, 256)
         x = x.permute(0, 2, 1)  # Permute the dimensions to have the sequence length as the second dimension
 
         x, _ = self.rnn(x)  # LSTM layers
