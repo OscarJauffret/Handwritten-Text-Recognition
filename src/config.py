@@ -74,10 +74,10 @@ class Config:
             add_gaussian_noise = 0.4
             apply_random_affine = 0.4
 
-        dilation_size = 2               # Higher means thinner text
+        dilation_size = 4               # Higher means thinner text
         erosion_size = dilation_size    # Higher means thicker text
-        gamma = 0.2                     # Lower means whiter text
-        pixel_dropout_prob = 0.2        # Higher means more pixels to white
-        gaussian_std = 0.2              # Higher means more noise
+        gamma = 0.5                     # Lower means whiter text
+        pixel_dropout_prob = 0.4        # Higher means more pixels to white
+        gaussian_std = 0.5              # Higher means more noise
         max_translation = 5             # Higher means more translation
         max_rotation = 5                # Higher means more rotation

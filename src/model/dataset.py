@@ -44,24 +44,8 @@ class HandwritingDataset(Dataset):
         image = self.data[idx]
         label = self.labels[idx]
         if self.augment:
-            return self.apply_augmentations(image), label
+            return Augmenter.augment(image), label
         return image, label
-
-    @staticmethod
-    def apply_augmentations(image):
-        if np.random.random() < Config.Augmentation.Probs.dilate:
-            image = Augmenter.dilate(image, Config.Augmentation.dilation_size)
-        if np.random.random() < Config.Augmentation.Probs.erode:
-            image = Augmenter.erode(image, Config.Augmentation.erosion_size)
-        if np.random.random() < Config.Augmentation.Probs.gamma_correction:
-            image = Augmenter.gamma_correction(image, Config.Augmentation.gamma)
-        if np.random.random() < Config.Augmentation.Probs.pixel_dropout:
-            image = Augmenter.pixel_dropout(image, Config.Augmentation.pixel_dropout_prob)
-        if np.random.random() < Config.Augmentation.Probs.add_gaussian_noise:
-            image = Augmenter.add_gaussian_noise(image, Config.Augmentation.gaussian_std)
-        if np.random.random() < Config.Augmentation.Probs.apply_random_affine:
-            image = Augmenter.apply_random_affine(image, Config.Augmentation.max_translation, Config.Augmentation.max_rotation)
-        return image
 
 if __name__ == '__main__':
     image_folder = Config.Paths.train_words
