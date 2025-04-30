@@ -89,73 +89,77 @@ class Trainer:
             os.makedirs(Config.Paths.models_path)
         print(f"Training for {'∞' if epochs == -1 else epochs} epochs...")
         epoch = 0
-        while True:
-            if epochs != -1 and epoch >= epochs:
-                break
-            self.model.train()
-            epoch_loss = 0
-            for images, texts in train_loader:
-                loss = self.train_step(images, texts)
-                if loss is not None:
-                    epoch_loss += loss
-            epoch_loss /= len(train_loader)
-            self.train_loss_history.append(epoch_loss)
-
-            # Validation phase
-            val_cer = 0
-            self.model.eval()
-            with torch.no_grad():
-                for images, texts in val_loader:
-                    cer = self.validate_step(images, texts)
-                    val_cer += cer
-            val_cer /= len(val_loader)
-            self.val_cer_history.append(val_cer)
-
-            print("=" * 60)
-            print(f"Epoch {epoch + 1}/{epochs if epochs != -1 else '∞'}")
-            print(f"Training Loss: {epoch_loss:.4f}")
-            print(f"Validation CER: {val_cer:.4f}")
-            print(f"Learning Rate: {self.scheduler.optimizer.param_groups[0]['lr']:.6f}")
-            print("=" * 60)
-
-            if val_cer < self.best_val_cer:
-                self.best_val_cer = val_cer
-                self.patience_counter = 0
-                torch.save(self.model.state_dict(), os.path.join(Config.Paths.models_path, "best_model.pth"))
-                print("New best model saved.")
-            else:
-                self.patience_counter += 1
-                print(f"No improvement. Patience: {self.patience_counter}/{self.patience}")
-                if self.patience_counter >= self.patience:
-                    print("Early stopping triggered.")
+        try:
+            while True:
+                if epochs != -1 and epoch >= epochs:
                     break
+                self.model.train()
+                epoch_loss = 0
+                for images, texts in train_loader:
+                    loss = self.train_step(images, texts)
+                    if loss is not None:
+                        epoch_loss += loss
+                epoch_loss /= len(train_loader)
+                self.train_loss_history.append(epoch_loss)
 
-            self.scheduler.step(val_cer)
+                # Validation phase
+                val_cer = 0
+                self.model.eval()
+                with torch.no_grad():
+                    for images, texts in val_loader:
+                        cer = self.validate_step(images, texts)
+                        val_cer += cer
+                val_cer /= len(val_loader)
+                self.val_cer_history.append(val_cer)
 
-            # Save the models after each epoch
-            timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            torch.save(self.model.state_dict(), os.path.join(Config.Paths.models_path, f"model_{timestamp}_{val_cer:.4f}.pth"))
-            epoch += 1
+                print("=" * 60)
+                print(f"Epoch {epoch + 1}/{epochs if epochs != -1 else '∞'}")
+                print(f"Training Loss: {epoch_loss:.4f}")
+                print(f"Validation CER: {val_cer:.4f}")
+                print(f"Learning Rate: {self.scheduler.optimizer.param_groups[0]['lr']:.6f}")
+                print("=" * 60)
 
-        # Plot CER and Loss evolution
-        plt.figure(figsize=(10, 7))
-        fig, ax1 = plt.subplots()
+                if val_cer < self.best_val_cer:
+                    self.best_val_cer = val_cer
+                    self.patience_counter = 0
+                    torch.save(self.model.state_dict(), os.path.join(Config.Paths.models_path, "best_model.pth"))
+                    print("New best model saved.")
+                else:
+                    self.patience_counter += 1
+                    print(f"No improvement. Patience: {self.patience_counter}/{self.patience}")
+                    if self.patience_counter >= self.patience:
+                        print("Early stopping triggered.")
+                        break
 
-        ax1.set_xlabel('Epoch')
-        ax1.set_ylabel('Validation CER', color='tab:blue')
-        ax1.plot(self.val_cer_history, marker='o', color='tab:blue', label='Validation CER')
-        ax1.tick_params(axis='y', labelcolor='tab:blue')
-        ax1.grid(True)
+                self.scheduler.step(val_cer)
 
-        ax2 = ax1.twinx()  # Create second y-axis
-        ax2.set_ylabel('Training Loss', color='tab:red')
-        ax2.plot(self.train_loss_history, marker='o', color='tab:red', label='Training Loss')
-        ax2.tick_params(axis='y', labelcolor='tab:red')
+                # Save the models after each epoch
+                timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                torch.save(self.model.state_dict(), os.path.join(Config.Paths.models_path, f"model_{timestamp}_{val_cer:.4f}.pth"))
+                epoch += 1
 
-        plt.title('Validation CER and Training Loss Over Epochs')
-        lines, labels = ax1.get_legend_handles_labels()
-        lines2, labels2 = ax2.get_legend_handles_labels()
-        fig.legend(lines + lines2, labels + labels2, loc='upper right', bbox_to_anchor=(0.5, -0.05), ncol=2)
-        fig.tight_layout()
-        plt.savefig(os.path.join(Config.Paths.models_path, "cer_loss_evolution.png"))
-        plt.close()
+        except KeyboardInterrupt:
+            print("KeyboardInterrupt detected. Saving plots before exiting...")
+
+        finally:
+            plt.figure(figsize=(10, 7))
+            fig, ax1 = plt.subplots()
+
+            ax1.set_xlabel('Epoch')
+            ax1.set_ylabel('Validation CER', color='tab:blue')
+            ax1.plot(self.val_cer_history, marker='o', color='tab:blue', label='Validation CER')
+            ax1.tick_params(axis='y', labelcolor='tab:blue')
+            ax1.grid(True)
+
+            ax2 = ax1.twinx()
+            ax2.set_ylabel('Training Loss', color='tab:red')
+            ax2.plot(self.train_loss_history, marker='o', color='tab:red', label='Training Loss')
+            ax2.tick_params(axis='y', labelcolor='tab:red')
+
+            plt.title('Validation CER and Training Loss Over Epochs')
+            lines, labels = ax1.get_legend_handles_labels()
+            lines2, labels2 = ax2.get_legend_handles_labels()
+            fig.legend(lines + lines2, labels + labels2, loc='upper right', bbox_to_anchor=(0.5, -0.05), ncol=2)
+            fig.tight_layout()
+            plt.savefig(os.path.join(Config.Paths.models_path, "cer_loss_evolution.png"))
+            plt.close()
