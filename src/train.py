@@ -32,9 +32,24 @@ def train():
     model = CRNN(num_classes, Config.Model.hidden_size).to(device)
 
     if args.checkpoint is not None:
-        checkpoint = os.path.join(Config.Paths.models_path, args.checkpoint)
-        print(f"Loading model checkpoint from {checkpoint}...")
-        model.load_state_dict(torch.load(str(checkpoint), map_location=device))
+        checkpoint_path = os.path.join(Config.Paths.models_path, args.checkpoint)
+        print(f"Loading model checkpoint from {checkpoint_path}...")
+        checkpoint = torch.load(str(checkpoint_path), map_location=device)
+
+        # Load only compatible layers
+        model_dict = model.state_dict()
+        pretrained_dict = {k: v for k, v in checkpoint.items() if k in model_dict and v.shape == model_dict[k].shape}
+        model_dict.update(pretrained_dict)
+        model.load_state_dict(model_dict)
+
+        print(f"✅ Loaded {len(pretrained_dict)} layers from checkpoint.")
+        print(f"❌ Skipped {len(checkpoint) - len(pretrained_dict)} incompatible layers.")
+
+        # Freeze first two convolutional blocks
+        for layer in list(model.cnn.children())[:6]:  # Conv2d, BatchNorm2d, ReLU, MaxPool2d (first block) + next Conv2d, BatchNorm2d
+            for param in layer.parameters():
+                param.requires_grad = False
+
     else:
         print("No checkpoint provided, starting from scratch...")
 
