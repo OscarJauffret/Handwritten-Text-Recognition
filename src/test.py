@@ -8,8 +8,6 @@ import editdistance
 import argparse
 
 from skimage.io import imread, imsave
-from skimage.util import img_as_ubyte
-
 
 from .model.CRNN import CRNN
 from .config import Config
@@ -20,8 +18,9 @@ arg_parser = argparse.ArgumentParser()
 group = arg_parser.add_mutually_exclusive_group()
 group.add_argument('--fullpage', action='store_true', help='Whether to test on a full page or a random sample')
 group.add_argument('--custom', type=str, help='Path to custom image you want to test')
+group.add_argument('--test', action='store_true', help='Evaluate on the full test set and compute CER.')
+group.add_argument('--wer', action='store_true', help='Compute WER on the full-page forms in the test set and validation set')
 arg_parser.add_argument('--save', action='store_true', help='Whether to save the image')
-arg_parser.add_argument('--test', action='store_true', help='Evaluate on the full test set and compute CER.')
 
 class Inferer:
     def __init__(self, model_path, test_images_folder, test_words_folder, labels_folder, device=None):
@@ -44,6 +43,12 @@ class Inferer:
     def calculate_cer(self, prediction, ground_truth):
         return editdistance.eval(prediction, ground_truth) / max(len(ground_truth), 1)
 
+    def calculate_wer(self, prediction, ground_truth):
+        pred_words = prediction.strip().split()
+        gt_words = ground_truth.strip().split()
+        wer = editdistance.eval(pred_words, gt_words) / max(len(gt_words), 1)
+        return wer
+
     def predict(self, image_path):
         image = self.preprocess_image(image_path)
         with torch.no_grad():
@@ -52,9 +57,27 @@ class Inferer:
         prediction = decode_output(outputs)[0]
         return prediction
 
-    def get_ground_truth(self, image_path):
+    def predict_full_page(self, base_name, words_folder, labels_folder):
+        # Find all corresponding word images
+        word_images = sorted([
+            f for f in os.listdir(words_folder) if f.startswith(base_name) and f.endswith('.png')
+        ])
+        reconstructed_text = []
+        ground_truth_text = []
+        for word_file in word_images:
+            word_path = os.path.join(words_folder, word_file)
+            prediction = self.predict(word_path)
+            reconstructed_text.append(prediction)
+            ground_truth = self.get_ground_truth(word_path, labels_folder)
+            ground_truth_text.append(ground_truth)
+        reconstructed_sentence = ' '.join(reconstructed_text)
+        ground_truth_sentence = ' '.join(ground_truth_text)
+
+        return ground_truth_sentence, reconstructed_sentence
+
+    def get_ground_truth(self, image_path, labels_folder):
         label_file_name = image_path.split("/")[-1].split(".")[0] + ".txt"
-        label_path = os.path.join(self.labels_folder, label_file_name)
+        label_path = os.path.join(labels_folder, label_file_name)
         with open(label_path, 'r', encoding='utf-8') as f:
             ground_truth = f.readline().strip()
         return ground_truth
@@ -103,12 +126,11 @@ class Inferer:
         for file in selected_files:
             img_path = os.path.join(self.test_words_folder, file)
             prediction = self.predict(img_path)
-            ground_truth = self.get_ground_truth(img_path)
+            ground_truth = self.get_ground_truth(img_path, self.labels_folder)
 
             cer = self.calculate_cer(prediction, ground_truth)
 
             self.plot_prediction(img_path, prediction, ground_truth, cer, save_plots, output_folder, file)
-
 
     def test_full_page(self, save_plot=False, output_folder="plots", random_seed=None):
         if random_seed is not None:
@@ -119,24 +141,10 @@ class Inferer:
         selected_file = random.choice(full_page_files)
         base_name = selected_file.split(".")[0]
 
-        # Find all corresponding word images
-        word_images = sorted([
-            f for f in os.listdir(self.test_words_folder) if f.startswith(base_name) and f.endswith('.png')
-        ])
-
-        reconstructed_text = []
-        ground_truth_text = []
-
-        for word_file in word_images:
-            word_path = os.path.join(self.test_words_folder, word_file)
-            prediction = self.predict(word_path)
-            reconstructed_text.append(prediction)
-            ground_truth = self.get_ground_truth(word_path)
-            ground_truth_text.append(ground_truth)
-
-        reconstructed_sentence = ' '.join(reconstructed_text)
-        ground_truth_sentence = ' '.join(ground_truth_text)
+        ground_truth_sentence, reconstructed_sentence = self.predict_full_page(base_name, self.test_words_folder, self.labels_folder)
         cer = self.calculate_cer(reconstructed_sentence, ground_truth_sentence)
+        wer = self.calculate_wer(reconstructed_sentence, ground_truth_sentence)
+        print(f"WER on {selected_file}: {wer * 100:.2f}%")
 
         # Plot the full page
         self.plot_prediction(os.path.join(self.test_images_folder, selected_file), reconstructed_sentence,
@@ -182,7 +190,7 @@ class Inferer:
         for file in image_files:
             img_path = os.path.join(self.test_words_folder, file)
             prediction = self.predict(img_path)
-            ground_truth = self.get_ground_truth(img_path)
+            ground_truth = self.get_ground_truth(img_path, self.labels_folder)
             cer = self.calculate_cer(prediction, ground_truth)
             total_cer += cer
             count += 1
@@ -190,10 +198,34 @@ class Inferer:
         avg_cer = total_cer / max(count, 1)
         print(f"Average CER on test set: {avg_cer * 100:.2f}%")
 
+    def full_page_wer(self, folder, save_plot=False, output_folder="plots"):
+        forms_folder = os.path.join(folder, "images")
+        words_folder = os.path.join(folder, "words")
+        labels_folder = os.path.join(folder, "labels")
+
+        full_page_files = [f for f in os.listdir(forms_folder) if f.endswith('.png')]
+        total_wer = 0
+        total_words = 0
+
+        for selected_file in full_page_files:
+            base_name = selected_file.split(".")[0]
+            reconstructed_sentence, ground_truth_sentence = self.predict_full_page(base_name, words_folder, labels_folder)
+
+            wer = self.calculate_wer(reconstructed_sentence, ground_truth_sentence)
+            total_wer += wer
+            total_words += 1
+
+            if save_plot:
+                self.plot_prediction(os.path.join(forms_folder, selected_file), reconstructed_sentence,
+                                     ground_truth_sentence, wer, save_plot, output_folder, selected_file, True)
+
+        avg_wer = total_wer / max(total_words, 1)
+        print(f"Average WER on full-page forms in {forms_folder}: {avg_wer * 100:.2f}%")
+
 
 if __name__ == '__main__':
     args = arg_parser.parse_args()
-    model_path = os.path.join(Config.Paths.models_path, "14_sameas13_and_augmentation_7.89.pth")
+    model_path = os.path.join(Config.Paths.models_path, "temp_best.pth")
     test_images_folder = Config.Paths.test_images
     test_words_folder = Config.Paths.test_words
     labels_folder = Config.Paths.test_labels
@@ -201,6 +233,10 @@ if __name__ == '__main__':
     inferer = Inferer(model_path, test_images_folder, test_words_folder, labels_folder, device)
     if args.test:
         inferer.test_set()
+        exit()
+    if args.wer:
+        inferer.full_page_wer(Config.Paths.test, save_plot=args.save)
+        inferer.full_page_wer(Config.Paths.validate, save_plot=args.save)
         exit()
     if not args.custom:
         if args.fullpage:
