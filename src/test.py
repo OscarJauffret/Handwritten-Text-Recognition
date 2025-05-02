@@ -21,6 +21,7 @@ group = arg_parser.add_mutually_exclusive_group()
 group.add_argument('--fullpage', action='store_true', help='Whether to test on a full page or a random sample')
 group.add_argument('--custom', type=str, help='Path to custom image you want to test')
 arg_parser.add_argument('--save', action='store_true', help='Whether to save the image')
+arg_parser.add_argument('--test', action='store_true', help='Evaluate on the full test set and compute CER.')
 
 class Inferer:
     def __init__(self, model_path, test_images_folder, test_words_folder, labels_folder, device=None):
@@ -173,6 +174,23 @@ class Inferer:
 
         os.remove(downsampled_image_path)
 
+    def test_set(self):
+        image_files = [f for f in os.listdir(self.test_words_folder) if f.endswith('.png')]
+        total_cer = 0
+        count = 0
+
+        for file in image_files:
+            img_path = os.path.join(self.test_words_folder, file)
+            prediction = self.predict(img_path)
+            ground_truth = self.get_ground_truth(img_path)
+            cer = self.calculate_cer(prediction, ground_truth)
+            total_cer += cer
+            count += 1
+
+        avg_cer = total_cer / max(count, 1)
+        print(f"Average CER on test set: {avg_cer * 100:.2f}%")
+
+
 if __name__ == '__main__':
     args = arg_parser.parse_args()
     model_path = os.path.join(Config.Paths.models_path, "14_sameas13_and_augmentation_7.89.pth")
@@ -181,6 +199,9 @@ if __name__ == '__main__':
     labels_folder = Config.Paths.test_labels
     device = select_device()
     inferer = Inferer(model_path, test_images_folder, test_words_folder, labels_folder, device)
+    if args.test:
+        inferer.test_set()
+        exit()
     if not args.custom:
         if args.fullpage:
             inferer.test_full_page(save_plot=args.save)
