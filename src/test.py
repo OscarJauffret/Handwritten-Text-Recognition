@@ -95,13 +95,16 @@ class Inferer:
         plt.figure(figsize=figsize)
         plt.imshow(img, cmap='gray', aspect='equal')
         plt.axis('off')
-        plt.title(f"CER: {cer * 100:.2f}%")
-        plt.subplots_adjust(left=0.15, bottom=0.05, right=0.85, top=0.95, wspace=0.05, hspace=0.05)
+        if fullpage:
+            plt.title(f"CER: {cer * 100:.2f}%")
+            plt.subplots_adjust(left=0.15, bottom=0.05, right=0.85, top=0.95, wspace=0.05, hspace=0.05)
 
-        # Wrap long texts
-        wrapped_prediction = "\n".join(textwrap.wrap(prediction, width=150))
-        wrapped_ground_truth = "\n".join(textwrap.wrap(ground_truth, width=150))
-        plt.suptitle(f"Prediction:\n{wrapped_prediction}\n\nGround Truth:\n{wrapped_ground_truth}", fontsize=10)
+            # Wrap long texts
+            wrapped_prediction = "\n".join(textwrap.wrap(prediction, width=150))
+            wrapped_ground_truth = "\n".join(textwrap.wrap(ground_truth, width=150))
+            plt.suptitle(f"Prediction:\n{wrapped_prediction}\n\nGround Truth:\n{wrapped_ground_truth}", fontsize=10)
+        else:
+            plt.title(f"Prediction: {prediction}\nGround Truth: {ground_truth}")
 
         plt.tight_layout()
 
@@ -152,7 +155,16 @@ class Inferer:
 
     def test_custom(self, image_path, temp_path, save_plot=False, output_folder="plots"):
         img = imread(image_path)
-        img = grayscale(img)
+        # Check and sanitize input image before processing
+        if img.dtype != np.float32:
+            img = img.astype(np.float32)
+        if img.max() > 1.0:
+            img = img / 255.0
+        img = np.nan_to_num(img, nan=1.0, posinf=1.0, neginf=0.0)
+        if img.ndim == 3:
+            img = grayscale(img)
+        elif img.ndim != 2:
+            raise ValueError(f"Unexpected image format: shape={img.shape}, dtype={img.dtype}")
         downsampled_img = downsample_image(img, Config.Data.word_height, Config.Data.word_width)
         if not os.path.exists(temp_path):
             os.makedirs(temp_path)
@@ -242,7 +254,6 @@ if __name__ == '__main__':
         if args.fullpage:
             inferer.test_full_page(save_plot=args.save)
         else:
-            inferer.test_random_samples(num_samples=5, save_plots=args.save)
+            inferer.test_random_samples(num_samples=15, save_plots=args.save)
     else:
         inferer.test_custom(args.custom, "tmp", save_plot=args.save)
-
