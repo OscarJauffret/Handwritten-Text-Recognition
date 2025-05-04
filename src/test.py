@@ -173,7 +173,7 @@ class Inferer:
 
         prediction = self.predict(downsampled_image_path)
 
-        height, width = img.shape
+        height, width = 64, 256
         dpi = 100
         figsize = (width / dpi + 2, height / dpi + 2)
 
@@ -237,10 +237,10 @@ class Inferer:
 
 if __name__ == '__main__':
     args = arg_parser.parse_args()
-    model_path = os.path.join(Config.Paths.models_path, "temp_best.pth")
-    test_images_folder = Config.Paths.test_images
-    test_words_folder = Config.Paths.test_words
-    labels_folder = Config.Paths.test_labels
+    model_path = os.path.join(Config.Paths.models_path, "16_largerlastconv.pth")
+    test_images_folder = Config.Paths.validate_images
+    test_words_folder = Config.Paths.validate_words
+    labels_folder = Config.Paths.validate_labels
     device = select_device()
     inferer = Inferer(model_path, test_images_folder, test_words_folder, labels_folder, device)
     if args.test:
@@ -254,6 +254,6 @@ if __name__ == '__main__':
         if args.fullpage:
             inferer.test_full_page(save_plot=args.save)
         else:
-            inferer.test_random_samples(num_samples=15, save_plots=args.save)
+            inferer.test_random_samples(num_samples=60, save_plots=args.save)
     else:
         inferer.test_custom(args.custom, "tmp", save_plot=args.save)
