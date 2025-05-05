@@ -2,9 +2,6 @@
 
 This project focuses on recognizing handwritten text using deep learning, trained on the IAM dataset.
 
-> [!NOTE]
-> The project is still in progress.
-
 ## 🛠️ Requirements
 
 - Python
